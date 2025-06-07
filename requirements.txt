@@ -10,6 +10,9 @@ mpmath>=1.3.0
 # HTTP requests para APIs (ligero)
 requests>=2.31.0
 
+# Plotting library (interactive charts)
+plotly>=5.0.0
+
 # REMOVIDAS para conservar memoria:
 # numpy (pesado - usar solo built-ins)
 # pandas (pesado - usar dict/list)
@@ -20,6 +23,6 @@ requests>=2.31.0
 python-dotenv>=1.0.0
 
 # NOTA CRÍTICA:
-# Total estimated RAM usage: ~300-400MB
-# Leaving ~600-700MB for actual computation within 1GB limit
+# Total estimated RAM usage: ~350-450MB (Plotly adds some overhead)
+# Leaving ~550-650MB for actual computation within 1GB limit
 # Para mayor funcionalidad, usar HuggingFace Spaces (16GB RAM)

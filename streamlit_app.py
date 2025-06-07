@@ -412,18 +412,20 @@ def main():
     st.markdown("---")
     st.markdown("<div style='text-align:center;color:#666;margin-top:1rem'><small>Calculadora de Precisión Arcos/Tubos</small></div>", unsafe_allow_html=True)
 
-    st.markdown(
-    '<script>'
-    "try {"
-    "    const numberInputs = document.querySelectorAll('input[type="number"]');"
-    "    numberInputs.forEach(function(input) {"
-    "        input.addEventListener('focus', function() {"
-    "            this.select();"
-    "        });"
-    "    });"
-    "} catch (e) { /* console.error('Error attaching focus listeners:', e); */ }"
-    "</script>",
-    unsafe_allow_html=True)
+    # Corrected JavaScript block construction
+    js_script = (
+        '<script>\n'
+        'try {\n'
+        '    const numberInputs = document.querySelectorAll(\'input[type="number"]\');\n'
+        '    numberInputs.forEach(function(input) {\n'
+        '        input.addEventListener(\'focus\', function() {\n'
+        '            this.select();\n'
+        '        });\n'
+        '    });\n'
+        '} catch (e) { /* console.error(\'Error attaching focus listeners:\', e); */ }\n'
+        '</script>'
+    )
+    st.markdown(js_script, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     for key, default_val in [('chord_input_float', 100.0), ('sagitta_input_float', 10.0), ('tube_length_input_float', 0.0)]:

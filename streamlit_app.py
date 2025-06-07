@@ -178,7 +178,7 @@ def calculate_radius_all_methods(chord_float: float, sagitta_float: float, inter
             arc_len_val, central_angle_val = arc_length_data.get("arc_length"), arc_length_data.get("central_angle_deg")
             if arc_len_val is not None: arc_length_str = str(arc_len_val)
             if central_angle_val is not None: central_angle_str = str(central_angle_val)
-            arc_calc_error_msg = None # Explicitly set to None if no error
+            arc_calc_error_msg = None
 
         confidence_dec = Decimal('1')
         if len(valid_results_list) > 1 and median_value_dec != Decimal('0'):
@@ -334,9 +334,7 @@ def main():
                     else: st.info("Error relativo (sagitta): Indefinido.")
 
                     st.subheader("📊 Visualización del Arco Principal")
-                    main_arc_plot_fig = create_single_arc_visualization(
-                        Decimal(str(current_chord_f)), Decimal(str(current_sagitta_f)), radius_final_dec,
-                        plot_title_prefix="Arco Principal", display_precision_cfg=app_config['display_precision_general'])
+                    main_arc_plot_fig = create_single_arc_visualization(Decimal(str(current_chord_f)), Decimal(str(current_sagitta_f)), radius_final_dec, plot_title_prefix="Arco Principal", display_precision_cfg=app_config['display_precision_general'])
                     if main_arc_plot_fig and PLOTLY_AVAILABLE: st.plotly_chart(main_arc_plot_fig, use_container_width=True)
                     elif PLOTLY_AVAILABLE: st.warning("No se pudo generar gráfico del arco principal.")
                     else: st.info("Gráficos desactivados (Plotly no disponible).")
@@ -354,9 +352,7 @@ def main():
                             st.caption(f"Para L_tubo={current_tube_len_f:.{app_config['display_precision_metrics']}f}, R_arco={radius_final_dec:.{display_prec_cfg}f}")
 
                             st.subheader("📊 Visualización del Tubo Rolado")
-                            tube_arc_plot_fig = create_single_arc_visualization(
-                                tube_len_dec, flecha_tubo_calc_dec, radius_final_dec,
-                                plot_title_prefix="Tubo Rolado", display_precision_cfg=app_config['display_precision_general'])
+                            tube_arc_plot_fig = create_single_arc_visualization(tube_len_dec, flecha_tubo_calc_dec, radius_final_dec, plot_title_prefix="Tubo Rolado", display_precision_cfg=app_config['display_precision_general'])
                             if tube_arc_plot_fig and PLOTLY_AVAILABLE: st.plotly_chart(tube_arc_plot_fig, use_container_width=True)
                             elif PLOTLY_AVAILABLE: st.warning("No se pudo generar gráfico del tubo rolado.")
 
@@ -364,16 +360,12 @@ def main():
                                 num_tubes_float = float(arc_length_dec_val) / current_tube_len_f
                                 full_tubes = math.floor(num_tubes_float)
                                 num_tubes_display_str = f"{num_tubes_float:.{display_prec_cfg}f} ({full_tubes} completo(s))"
-
                                 st.subheader("🧩 Ajuste de Tubos en el Arco")
                                 st.write(f"Longitud del Arco Calculada (L_arco): **{arc_length_dec_val:.{display_prec_cfg}f}**")
                                 st.write(f"Longitud de cada Tubo (L_tubo): **{current_tube_len_f:.{app_config['display_precision_metrics']}f}**")
                                 st.metric(label="Número de Tubos que Caben", value=f"{num_tubes_float:.{display_prec_cfg}f}")
-                                if full_tubes > 0:
-                                    st.caption(f"Esto equivale a **{full_tubes}** tubo(s) completo(s).")
-                            elif arc_calc_error_msg: # Display error if arc length calculation failed
-                                st.subheader("🧩 Ajuste de Tubos en el Arco")
-                                st.caption(f"No se pudo calcular el ajuste de tubos: {arc_calc_error_msg}")
+                                if full_tubes > 0: st.caption(f"Esto equivale a **{full_tubes}** tubo(s) completo(s).")
+                            elif arc_calc_error_msg: st.caption(f"Ajuste de tubos no calculado: {arc_calc_error_msg}")
                         else: st.warning("No se calcula flecha de tubo: radio del arco principal no válido.")
 
                     if app_config['gemini_api_key'] and REQUESTS_AVAILABLE:
@@ -382,21 +374,18 @@ def main():
                                 s_tubo_str = f"{flecha_tubo_calc_dec:.{display_prec_cfg}f}" if flecha_tubo_calc_dec is not None else "N/A"
                                 arc_len_str_for_ai = f"{arc_length_dec_val:.{display_prec_cfg}f}" if arc_length_dec_val is not None and arc_length_dec_val > Decimal('1e-7') and not arc_calc_error_msg else "N/A"
                                 central_angle_str_for_ai = f"{central_angle_deg_val:.{display_prec_cfg}f}°" if central_angle_deg_val is not None and not arc_calc_error_msg else "N/A"
-                                # num_tubes_display_str is defined above
+                                # num_tubes_display_str is already defined above for AI prompt
 
-                                ai_prompt = (f"Análisis de cálculo de arco:
-"
-                                             f"- Cuerda (c): {current_chord_f:.{app_config['display_precision_metrics']}f}, Sagitta (s): {current_sagitta_f:.{app_config['display_precision_metrics']}f}, Radio calculado (R): {radius_final_dec:.{display_prec_cfg}f}.
-"
-                                             f"- Longitud de arco calculada (L_arco): {arc_len_str_for_ai}, Ángulo Central: {central_angle_str_for_ai}.
-"
-                                             f"¿Es R geométricamente coherente con c y s? ¿Son L_arco y Ángulo coherentes?
-"
-                                             f"Si L_tubo = {current_tube_len_f:.{app_config['display_precision_metrics']}f} (>0), y s_tubo = {s_tubo_str}, ¿es s_tubo coherente?
-"
-                                             f"Si L_arco > 0 y L_tubo > 0, ¿cuántos tubos caben ({num_tubes_display_str})?
-"
-                                             f"Explicación concisa.")
+                                prompt_lines = []
+                                prompt_lines.append("Análisis de cálculo de arco:")
+                                prompt_lines.append(f"- Cuerda (c): {current_chord_f:.{app_config['display_precision_metrics']}f}, Sagitta (s): {current_sagitta_f:.{app_config['display_precision_metrics']}f}, Radio calculado (R): {radius_final_dec:.{display_prec_cfg}f}.")
+                                prompt_lines.append(f"- Longitud de arco calculada (L_arco): {arc_len_str_for_ai}, Ángulo Central: {central_angle_str_for_ai}.")
+                                prompt_lines.append(f"¿Es R geométricamente coherente con c y s? ¿Son L_arco y Ángulo coherentes?")
+                                prompt_lines.append(f"Si L_tubo = {current_tube_len_f:.{app_config['display_precision_metrics']}f} (>0), y s_tubo = {s_tubo_str}, ¿es s_tubo coherente?")
+                                prompt_lines.append(f"Si L_arco > 0 y L_tubo > 0, ¿cuántos tubos caben ({num_tubes_display_str})?")
+                                prompt_lines.append(f"Explicación concisa.")
+                                ai_prompt = "\n".join(prompt_lines)
+
                                 ai_response = call_gemini_api(ai_prompt, app_config['gemini_api_key'])
                                 if ai_response["success"]: st.info("Respuesta de IA:"); st.markdown(ai_response["response"])
                                 else: st.error(f"Error IA: {ai_response['error']}")

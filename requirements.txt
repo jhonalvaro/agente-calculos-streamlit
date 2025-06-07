@@ -1,3 +1,25 @@
+# Dependencias OPTIMIZADAS para Streamlit Community Cloud (1GB RAM)
+# Minimalistas para evitar exceder límite de memoria
+
+# UI Framework principal (obligatorio)
 streamlit>=1.28.0
+
+# Matemáticas optimizadas (CRÍTICO: versión específica para conservar RAM)
 mpmath>=1.3.0
+
+# HTTP requests para APIs (ligero)
 requests>=2.31.0
+
+# REMOVIDAS para conservar memoria:
+# numpy (pesado - usar solo built-ins)
+# pandas (pesado - usar dict/list)
+# matplotlib (muy pesado - usar st.plotly_chart si necesario)
+# google-generativeai (instalar solo si necesario - usar requests directo)
+
+# Configuración opcional (ligero)
+python-dotenv>=1.0.0
+
+# NOTA CRÍTICA:
+# Total estimated RAM usage: ~300-400MB
+# Leaving ~600-700MB for actual computation within 1GB limit
+# Para mayor funcionalidad, usar HuggingFace Spaces (16GB RAM)

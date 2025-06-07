@@ -170,17 +170,16 @@ def generate_arc_plot(chord_dec, sagitta_dec, radius_dec, tube_length_dec=None, 
     if R <= S or R <= C/2 or R == float('inf'):
         fig = go.Figure()
         fig.add_annotation(text="Geometría de arco no válida o infinita para graficar.", xref="paper", yref="paper", showarrow=False)
-        fig.update_layout(height=200, title_text="Visualización no disponible") # Increased height
+        fig.update_layout(height=200, title_text="Visualización no disponible")
         return fig
 
     h_center = 0.0
     k_center = S - R
 
-    # Clamping value for np.arccos to avoid domain errors due to potential float precision issues
     val_for_arccos = (R - S) / R
     if val_for_arccos > 1.0: val_for_arccos = 1.0
     if val_for_arccos < -1.0: val_for_arccos = -1.0
-    alpha = np.arccos(val_for_arccos) # Half angle of the arc segment
+    alpha = np.arccos(val_for_arccos)
 
     t_angles = np.linspace(-alpha, alpha, 100)
     x_arc = R * np.sin(t_angles)
@@ -193,27 +192,20 @@ def generate_arc_plot(chord_dec, sagitta_dec, radius_dec, tube_length_dec=None, 
     fig.add_trace(go.Scatter(x=[0, 0], y=[0, S], mode='lines', name='Sagitta (S)', line=dict(color='green', dash='dash')))
     fig.add_trace(go.Scatter(x=[h_center, 0], y=[k_center, S], mode='lines', name='Radio (R)', line=dict(color='purple', dash='dot')))
 
-    # Annotations
     fig.add_annotation(x=0, y=S/2, text=f"S={S:.{display_precision_cfg}f}", showarrow=False, yshift=10, font=dict(size=10))
     fig.add_annotation(x=C/4, y=0, text=f"C/2={C/2:.{display_precision_cfg}f}", showarrow=False, yshift=-10, font=dict(size=10))
     mid_Rx, mid_Ry = (h_center + 0) / 2, (k_center + S) / 2
     fig.add_annotation(x=mid_Rx, y=mid_Ry, text=f"R={R:.{display_precision_cfg}f}", showarrow=False, bgcolor="rgba(255,255,255,0.7)", font=dict(size=10))
 
-
     if tube_length_dec is not None and tube_sagitta_dec is not None and R > 0:
         L_tube = float(tube_length_dec)
         s_tube = float(tube_sagitta_dec)
-        # Check if tube can be bent with radius R
-        if L_tube / (2 * R) <= 1 and L_tube / (2*R) >= -1 and R > s_tube : # Added R > s_tube check
+        if L_tube / (2 * R) <= 1 and L_tube / (2*R) >= -1 and R > s_tube :
             alpha_tube = np.arcsin(L_tube / (2 * R))
-            k_center_tube_arc = s_tube - R # Center relative to its own chord
-
-            # Offset the tube plot for clarity
+            k_center_tube_arc = s_tube - R
             y_offset_for_tube_plot = (k_center - R) - s_tube - (S * 0.3)
-
             x_arc_tube = R * np.sin(np.linspace(-alpha_tube, alpha_tube, 50))
             y_arc_tube = (k_center_tube_arc + y_offset_for_tube_plot) + R * np.cos(np.linspace(-alpha_tube, alpha_tube, 50))
-
             y_chord_tube = y_offset_for_tube_plot
 
             fig.add_trace(go.Scatter(x=x_arc_tube, y=y_arc_tube, mode='lines', name=f'Tubo (L={L_tube:.{display_precision_cfg-2}f}, s={s_tube:.{display_precision_cfg-2}f})', line=dict(color='orange', width=2)))
@@ -266,47 +258,21 @@ def main():
     num_input_fmt_str = f"%.{app_config['display_precision_general']}f"
     num_input_stp_val = 1.0 / (10**app_config['display_precision_general'])
 
-    input_cols_cfg = [0.85, 0.15]
-
-    c1, c2 = st.columns(input_cols_cfg)
-    with c1:
-        st.session_state.chord_input_float = st.number_input("Cuerda (c)", min_value=1e-9, max_value=1e12,
-                                                            value=st.session_state.chord_input_float,
+    st.session_state.chord_input_float = st.number_input("Cuerda (c)", min_value=1e-9, max_value=1e12,
+                                                        value=st.session_state.chord_input_float,
+                                                        step=num_input_stp_val, format=num_input_fmt_str,
+                                                        key="chord_input_widget",
+                                                        help=f"Longitud de la cuerda del arco.")
+    st.session_state.sagitta_input_float = st.number_input("Sagitta/Flecha (s)", min_value=1e-9, max_value=1e12,
+                                                            value=st.session_state.sagitta_input_float,
                                                             step=num_input_stp_val, format=num_input_fmt_str,
-                                                            key="chord_input_widget",
-                                                            help=f"Longitud de la cuerda del arco.")
-    with c2:
-        st.markdown("##")
-        if st.button("✖️", key="clear_chord", help="Limpiar Cuerda"):
-            st.session_state.chord_input_float = 0.0 # Default to 0.0 or an empty state if preferred
-            st.rerun()
-
-    s1, s2 = st.columns(input_cols_cfg)
-    with s1:
-        st.session_state.sagitta_input_float = st.number_input("Sagitta/Flecha (s)", min_value=1e-9, max_value=1e12,
-                                                                value=st.session_state.sagitta_input_float,
+                                                            key="sagitta_input_widget",
+                                                            help=f"Altura máxima del arco.")
+    st.session_state.tube_length_input_float = st.number_input("Longitud Tubo (L_tubo)", min_value=0.0, max_value=1e12,
+                                                                value=st.session_state.tube_length_input_float,
                                                                 step=num_input_stp_val, format=num_input_fmt_str,
-                                                                key="sagitta_input_widget",
-                                                                help=f"Altura máxima del arco.")
-    with s2:
-        st.markdown("##")
-        if st.button("✖️", key="clear_sagitta", help="Limpiar Sagitta"):
-            st.session_state.sagitta_input_float = 0.0
-            st.rerun()
-
-    lt1, lt2 = st.columns(input_cols_cfg)
-    with lt1:
-        st.session_state.tube_length_input_float = st.number_input("Longitud Tubo (L_tubo)", min_value=0.0, max_value=1e12,
-                                                                    value=st.session_state.tube_length_input_float,
-                                                                    step=num_input_stp_val, format=num_input_fmt_str,
-                                                                    key="tube_length_input_widget",
-                                                                    help=f"Longitud del tubo a rolar (opcional).")
-    with lt2:
-        st.markdown("##")
-        if st.button("✖️", key="clear_tube_length", help="Limpiar Longitud Tubo"):
-            st.session_state.tube_length_input_float = 0.0
-            st.rerun()
-
+                                                                key="tube_length_input_widget",
+                                                                help=f"Longitud del tubo a rolar (opcional).")
 
     if st.button("🚀 Calcular", type="primary", use_container_width=True):
         current_chord_f = st.session_state.chord_input_float
@@ -401,6 +367,20 @@ def main():
 
     st.markdown("---")
     st.markdown("<div style='text-align:center;color:#666;margin-top:1rem'><small>Calculadora de Precisión Arcos/Tubos</small></div>", unsafe_allow_html=True)
+
+    # JavaScript for select-all-on-focus for number inputs
+    st.markdown(
+    '<script>'
+    "try {"
+    "    const numberInputs = document.querySelectorAll('input[type=\"number\"]');" # Escaped double quotes
+    "    numberInputs.forEach(function(input) {"
+    "        input.addEventListener('focus', function() {"
+    "            this.select();"
+    "        });"
+    "    });"
+    "} catch (e) { /* console.error('Error attaching focus listeners:', e); */ }"
+    "</script>",
+    unsafe_allow_html=True)
 
 if __name__ == "__main__":
     for key, default_val in [('chord_input_float', 100.0), ('sagitta_input_float', 10.0), ('tube_length_input_float', 0.0)]:

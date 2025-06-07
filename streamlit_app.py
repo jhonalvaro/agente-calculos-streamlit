@@ -159,7 +159,8 @@ def calculate_radius_all_methods(chord_float: float, sagitta_float: float, inter
     except InvalidOperation as e: return {"error": f"Error de operación Decimal: {str(e)}"}
     except Exception as e: return {"error": f"Error general en núcleo de cálculo: {str(e)}"}
 
-def generate_arc_plot(chord_dec, sagitta_dec, radius_dec, tube_length_dec=None, tube_sagitta_dec=None, display_precision_cfg=7):
+# Renamed function, only plots one arc now
+def create_single_arc_visualization(chord_dec, sagitta_dec, radius_dec, plot_title_prefix="Arco", display_precision_cfg=7):
     if not PLOTLY_AVAILABLE:
         return None
 
@@ -167,61 +168,54 @@ def generate_arc_plot(chord_dec, sagitta_dec, radius_dec, tube_length_dec=None, 
     S = float(sagitta_dec)
     R = float(radius_dec)
 
-    if R <= S or R <= C/2 or R == float('inf'):
+    # Basic validation for plotting
+    if R <= 0 or S <= 0 or C <= 0 or R == float('inf') or S >= C/2 or R < S or R < C/2 :
         fig = go.Figure()
-        fig.add_annotation(text="Geometría de arco no válida o infinita para graficar.", xref="paper", yref="paper", showarrow=False)
-        fig.update_layout(height=200, title_text="Visualización no disponible")
+        fig.add_annotation(text=f"Geometría de '{plot_title_prefix}' no válida para graficar (C={C:.2f}, S={S:.2f}, R={R:.2f}).",
+                           xref="paper", yref="paper", showarrow=False)
+        fig.update_layout(height=200, title_text=f"{plot_title_prefix}: Visualización no disponible")
         return fig
 
     h_center = 0.0
-    k_center = S - R
+    k_center = S - R # Assuming sagitta S is positive upwards from chord on x-axis
 
+    # Clamp value for np.arccos to avoid domain errors due to potential float precision issues
     val_for_arccos = (R - S) / R
     if val_for_arccos > 1.0: val_for_arccos = 1.0
-    if val_for_arccos < -1.0: val_for_arccos = -1.0
-    alpha = np.arccos(val_for_arccos)
+    elif val_for_arccos < -1.0: val_for_arccos = -1.0
+    alpha = np.arccos(val_for_arccos) # Half angle of the arc segment
 
-    t_angles = np.linspace(-alpha, alpha, 100)
+    t_angles = np.linspace(-alpha, alpha, 100) # 100 points for a smooth arc
     x_arc = R * np.sin(t_angles)
     y_arc = k_center + R * np.cos(t_angles)
 
     fig = go.Figure()
 
-    fig.add_trace(go.Scatter(x=x_arc, y=y_arc, mode='lines', name='Arco Calculado', line=dict(color='blue', width=2)))
-    fig.add_trace(go.Scatter(x=[-C/2, C/2], y=[0, 0], mode='lines', name='Cuerda (C)', line=dict(color='red', dash='dash')))
-    fig.add_trace(go.Scatter(x=[0, 0], y=[0, S], mode='lines', name='Sagitta (S)', line=dict(color='green', dash='dash')))
-    fig.add_trace(go.Scatter(x=[h_center, 0], y=[k_center, S], mode='lines', name='Radio (R)', line=dict(color='purple', dash='dot')))
+    # Add Arc trace
+    fig.add_trace(go.Scatter(x=x_arc, y=y_arc, mode='lines', name='Arco', line=dict(color='blue', width=2)))
+    # Add Chord trace
+    fig.add_trace(go.Scatter(x=[-C/2, C/2], y=[0, 0], mode='lines', name='Cuerda', line=dict(color='red', dash='dash')))
+    # Add Sagitta trace
+    fig.add_trace(go.Scatter(x=[0, 0], y=[0, S], mode='lines', name='Sagitta', line=dict(color='green', dash='dash')))
+    # Add Radius line (example from center to peak of sagitta)
+    fig.add_trace(go.Scatter(x=[h_center, 0], y=[k_center, S], mode='lines', name='Radio', line=dict(color='purple', dash='dot')))
 
-    fig.add_annotation(x=0, y=S/2, text=f"S={S:.{display_precision_cfg}f}", showarrow=False, yshift=10, font=dict(size=10))
-    fig.add_annotation(x=C/4, y=0, text=f"C/2={C/2:.{display_precision_cfg}f}", showarrow=False, yshift=-10, font=dict(size=10))
-    mid_Rx, mid_Ry = (h_center + 0) / 2, (k_center + S) / 2
-    fig.add_annotation(x=mid_Rx, y=mid_Ry, text=f"R={R:.{display_precision_cfg}f}", showarrow=False, bgcolor="rgba(255,255,255,0.7)", font=dict(size=10))
-
-    if tube_length_dec is not None and tube_sagitta_dec is not None and R > 0:
-        L_tube = float(tube_length_dec)
-        s_tube = float(tube_sagitta_dec)
-        if L_tube / (2 * R) <= 1 and L_tube / (2*R) >= -1 and R > s_tube :
-            alpha_tube = np.arcsin(L_tube / (2 * R))
-            k_center_tube_arc = s_tube - R
-            y_offset_for_tube_plot = (k_center - R) - s_tube - (S * 0.3)
-            x_arc_tube = R * np.sin(np.linspace(-alpha_tube, alpha_tube, 50))
-            y_arc_tube = (k_center_tube_arc + y_offset_for_tube_plot) + R * np.cos(np.linspace(-alpha_tube, alpha_tube, 50))
-            y_chord_tube = y_offset_for_tube_plot
-
-            fig.add_trace(go.Scatter(x=x_arc_tube, y=y_arc_tube, mode='lines', name=f'Tubo (L={L_tube:.{display_precision_cfg-2}f}, s={s_tube:.{display_precision_cfg-2}f})', line=dict(color='orange', width=2)))
-            fig.add_trace(go.Scatter(x=[-L_tube/2, L_tube/2], y=[y_chord_tube, y_chord_tube], mode='lines', name='Long. Tubo', line=dict(color='brown', dash='dash')))
-            fig.add_trace(go.Scatter(x=[0, 0], y=[y_chord_tube, y_chord_tube + s_tube], mode='lines', name='Sag. Tubo', line=dict(color='magenta', dash='dash')))
+    # Annotations for C, S, R (simplified for clarity)
+    fig.add_annotation(x=0, y=S * 0.5, text=f"S={S:.{display_precision_cfg}f}", showarrow=False, yshift=10, font=dict(size=10))
+    fig.add_annotation(x=0, y=-S*0.1, text=f"C={C:.{display_precision_cfg}f}", showarrow=False, yshift=-5, font=dict(size=10)) # Chord label below chord
+    fig.add_annotation(x=(h_center+0)/2, y=(k_center+S)/2 * 0.8, text=f"R={R:.{display_precision_cfg}f}", showarrow=False, bgcolor="rgba(255,255,255,0.7)", font=dict(size=10))
 
     fig.update_layout(
-        title_text=f"Visualización del Arco (R={R:.{display_precision_cfg}f})",
+        title_text=f"{plot_title_prefix} (R={R:.{display_precision_cfg}f})",
         xaxis_title="Dimensión X",
         yaxis_title="Dimensión Y",
-        yaxis_scaleanchor="x",
+        yaxis_scaleanchor="x", # Enforces aspect ratio 1:1
         legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
         margin=dict(t=50, b=120, l=20, r=20),
-        height=600
+        height=500 # Slightly reduced height from 600
     )
     return fig
+
 
 def main():
     app_config = init_app_config()
@@ -261,18 +255,15 @@ def main():
     st.session_state.chord_input_float = st.number_input("Cuerda (c)", min_value=1e-9, max_value=1e12,
                                                         value=st.session_state.chord_input_float,
                                                         step=num_input_stp_val, format=num_input_fmt_str,
-                                                        key="chord_input_widget",
-                                                        help=f"Longitud de la cuerda del arco.")
+                                                        key="chord_input_widget", help=f"Longitud de la cuerda del arco.")
     st.session_state.sagitta_input_float = st.number_input("Sagitta/Flecha (s)", min_value=1e-9, max_value=1e12,
                                                             value=st.session_state.sagitta_input_float,
                                                             step=num_input_stp_val, format=num_input_fmt_str,
-                                                            key="sagitta_input_widget",
-                                                            help=f"Altura máxima del arco.")
+                                                            key="sagitta_input_widget", help=f"Altura máxima del arco.")
     st.session_state.tube_length_input_float = st.number_input("Longitud Tubo (L_tubo)", min_value=0.0, max_value=1e12,
                                                                 value=st.session_state.tube_length_input_float,
                                                                 step=num_input_stp_val, format=num_input_fmt_str,
-                                                                key="tube_length_input_widget",
-                                                                help=f"Longitud del tubo a rolar (opcional).")
+                                                                key="tube_length_input_widget", help=f"Longitud del tubo a rolar (opcional).")
 
     if st.button("🚀 Calcular", type="primary", use_container_width=True):
         current_chord_f = st.session_state.chord_input_float
@@ -291,7 +282,7 @@ def main():
                 if calc_results.get("success"):
                     radius_final_dec = Decimal(calc_results['radius_final_dec_str'])
                     confidence_dec = Decimal(calc_results['confidence_dec_str'])
-                    st.success(f"✅ **Radio del Arco Calculado (R): {radius_final_dec:.{display_prec_cfg}f}**")
+                    st.success(f"✅ **Radio del Arco Principal Calculado (R): {radius_final_dec:.{display_prec_cfg}f}**")
 
                     col_m1, col_m2, col_m3 = st.columns(3)
                     col_m1.metric("Confianza (Radio)", f"{confidence_dec:.2%}")
@@ -299,17 +290,30 @@ def main():
                     col_m2.metric("Métodos Válidos", f"{valid_method_cnt}/{len(calc_results['methods_dec_str'])}")
                     col_m3.metric("Tiempo Cálculo", f"{computation_time*1000:.1f}ms")
 
-                    st.subheader("Detalles del Cálculo del Radio")
+                    st.subheader("Detalles del Cálculo del Radio Principal")
                     methods_ui_data = [{"Método": k, "Resultado (R)": f"{Decimal(v):.{display_prec_cfg}f}" if not v.startswith("Error") else v, "Estado": "✅" if not v.startswith("Error") else "❌"} for k,v in calc_results['methods_dec_str'].items()]
                     st.table(methods_ui_data)
 
                     sag_corr_dec = Decimal(calc_results['sagitta_corrected_dec_str'])
                     sag_incorr_dec = Decimal(calc_results['sagitta_incorrect_dec_str'])
                     err_perc_dec = Decimal(calc_results['error_percentage_dec_str'])
-                    st.subheader(f"Verificación de Sagitta del Arco")
+                    st.subheader(f"Verificación de Sagitta (Arco Principal)")
                     col_s1,col_s2=st.columns(2); col_s1.metric(f"s con L²/(8R)",f"{sag_corr_dec:.{display_prec_cfg}f}"); col_s2.metric(f"s con L²/(2R)",f"{sag_incorr_dec:.{display_prec_cfg}f}")
                     if err_perc_dec.is_finite(): st.info(f"Error relativo (sagitta): {err_perc_dec:.2f}%")
                     else: st.info("Error relativo (sagitta): Indefinido.")
+
+                    # Plot for Main Arc
+                    st.subheader("📊 Visualización del Arco Principal")
+                    main_arc_plot_fig = create_single_arc_visualization(
+                        Decimal(str(current_chord_f)),
+                        Decimal(str(current_sagitta_f)),
+                        radius_final_dec,
+                        plot_title_prefix="Arco Principal",
+                        display_precision_cfg=display_prec_cfg
+                    )
+                    if main_arc_plot_fig and PLOTLY_AVAILABLE: st.plotly_chart(main_arc_plot_fig, use_container_width=True)
+                    elif PLOTLY_AVAILABLE: st.warning("No se pudo generar gráfico del arco principal.")
+                    else: st.info("Gráficos desactivados (Plotly no disponible).")
 
                     flecha_tubo_calc_dec = None
                     if current_tube_len_f > 1e-9:
@@ -320,19 +324,23 @@ def main():
                             flecha_tubo_calc_dec = ui_calc.calculate_sagitta_corrected(tube_len_dec, radius_final_dec)
                             col_t1,col_t2=st.columns(2); col_t1.metric("Longitud Tubo",f"{current_tube_len_f:.{app_config['display_precision_metrics']}f}"); col_t2.metric("Flecha Tubo Calculada",f"{flecha_tubo_calc_dec:.{display_prec_cfg}f}")
                             st.caption(f"Para L_tubo={current_tube_len_f:.{app_config['display_precision_metrics']}f}, R_arco={radius_final_dec:.{display_prec_cfg}f}")
-                        else: st.warning("No se calcula flecha de tubo: radio del arco no válido.")
 
-                    st.subheader("📊 Visualización del Arco")
-                    plot_fig_obj = generate_arc_plot(
-                        Decimal(str(current_chord_f)), Decimal(str(current_sagitta_f)), radius_final_dec,
-                        Decimal(str(current_tube_len_f)) if current_tube_len_f > 1e-9 else None,
-                        flecha_tubo_calc_dec,
-                        display_prec_cfg
-                    )
-                    if plot_fig_obj and PLOTLY_AVAILABLE: st.plotly_chart(plot_fig_obj, use_container_width=True)
-                    elif PLOTLY_AVAILABLE: st.warning("No se pudo generar gráfico.")
-                    else: st.info("Gráficos desactivados (Plotly no disponible).")
+                            # Plot for Tube Arc (if calculated)
+                            st.subheader("📊 Visualización del Tubo Rolado")
+                            tube_arc_plot_fig = create_single_arc_visualization(
+                                tube_len_dec, # Chord for this plot is tube length
+                                flecha_tubo_calc_dec, # Sagitta for this plot is tube's sagitta
+                                radius_final_dec, # Bent with the main arc's radius
+                                plot_title_prefix="Tubo Rolado",
+                                display_precision_cfg=display_prec_cfg
+                            )
+                            if tube_arc_plot_fig and PLOTLY_AVAILABLE: st.plotly_chart(tube_arc_plot_fig, use_container_width=True)
+                            elif PLOTLY_AVAILABLE: st.warning("No se pudo generar gráfico del tubo rolado.")
+                            # No need for "Plotly not available" again if already shown for main arc
 
+                        else: st.warning("No se calcula flecha de tubo: radio del arco principal no válido.")
+
+                    # AI Analysis (remains the same)
                     if app_config['gemini_api_key'] and REQUESTS_AVAILABLE:
                         with st.expander("🤖 Análisis con IA (Opcional)", expanded=False):
                             with st.spinner("🧠 Consultando IA..."):
@@ -368,7 +376,7 @@ def main():
     st.markdown("---")
     st.markdown("<div style='text-align:center;color:#666;margin-top:1rem'><small>Calculadora de Precisión Arcos/Tubos</small></div>", unsafe_allow_html=True)
 
-    # JavaScript for select-all-on-focus for number inputs
+    # JavaScript for select-all-on-focus (remains the same)
     st.markdown(
     '<script>'
     "try {"

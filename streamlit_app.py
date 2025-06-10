@@ -1,3 +1,4 @@
+# File overwritten on 2024-07-15 to correct persistent syntax errors from stray markdown formatting.
 #!/usr/bin/env python3
 # """
 # 🔢 Calculadora de Precisión para Arcos y Tubos (Streamlit App)
@@ -47,7 +48,7 @@ def init_app_config():
     return {'precision': 28, 'display_precision_general': 1, 'display_precision_metrics': 1,
             'max_cache_entries': 20, 'cache_ttl': 1800, 'gemini_api_key': st.secrets.get("GOOGLE_API_KEY", "")}
 
-class OptimizedCalculator: # ... (class definition remains unchanged) ...
+class OptimizedCalculator:
     def __init__(self, precision: int = 28):
         self.precision = precision
         if MPMATH_AVAILABLE: mp.dps = self.precision
@@ -93,7 +94,7 @@ class OptimizedCalculator: # ... (class definition remains unchanged) ...
         except Exception as e: return {"error": f"Error inesperado en cálculo de arco: {e}"}
 
 @st.cache_data(ttl=1800, max_entries=10)
-def call_gemini_api(prompt: str, api_key: str) -> Dict[str, Any]: # ... (no changes) ...
+def call_gemini_api(prompt: str, api_key: str) -> Dict[str, Any]:
     if not api_key: return {"success": False, "error": "API key de Gemini no configurada."}
     if not REQUESTS_AVAILABLE: return {"success": False, "error": "Módulo 'requests' no disponible."}
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
@@ -112,7 +113,7 @@ def call_gemini_api(prompt: str, api_key: str) -> Dict[str, Any]: # ... (no chan
     except Exception as e: return {"success": False, "error": f"Error procesando API: {str(e)}"}
 
 @st.cache_data(ttl=3600, max_entries=20)
-def calculate_radius_all_methods(chord_base_unit_float: float, sagitta_base_unit_float: float, internal_precision: int) -> Dict[str, Any]: # ... (no changes) ...
+def calculate_radius_all_methods(chord_base_unit_float: float, sagitta_base_unit_float: float, internal_precision: int) -> Dict[str, Any]:
     calc_context = getcontext(); calc_context.prec = internal_precision
     try:
         chord_base = Decimal(str(chord_base_unit_float)); sagitta_base = Decimal(str(sagitta_base_unit_float))
@@ -148,7 +149,7 @@ def calculate_radius_all_methods(chord_base_unit_float: float, sagitta_base_unit
         return {"success": True, "radius_final_dec_str": str(median_radius_base), "confidence_dec_str": str(confidence_dec), "methods_dec_str": {k: str(v) if isinstance(v,Decimal) else v for k,v in results_decimal.items()}, "sagitta_corrected_dec_str": str(sag_corr_base), "sagitta_incorrect_dec_str": str(sag_incorr_base), "error_percentage_dec_str": str(err_perc_dec), "arc_length_dec_str": arc_length_str, "central_angle_deg_str": central_angle_str, "arc_calculation_error": arc_calc_error_msg }
     except Exception as e: return {"error": f"Error general en núcleo de cálculo: {str(e)}"}
 
-def create_single_arc_visualization(chord_val, sagitta_val, radius_val, plot_title_prefix="Arco", display_precision_cfg=1, unit_name="Unidades"): # ... (no changes) ...
+def create_single_arc_visualization(chord_val, sagitta_val, radius_val, plot_title_prefix="Arco", display_precision_cfg=1, unit_name="Unidades"):
     if not PLOTLY_AVAILABLE: return None
     C, S, R = float(chord_val), float(sagitta_val), float(radius_val)
     if not (R > 1e-9 and S > 1e-9 and C > 1e-9 and R != float('inf') and S < C/2 and R >= S-(1e-9) and R >= C/2-(1e-9)):
@@ -189,7 +190,7 @@ def main():
 
     st.info(f"Precisión interna: {app_config['precision']} dígitos. Entradas/Resultados en {selected_unit_name_for_display}. Resultados mostrados con {display_prec_cfg} decimal.")
 
-    with st.sidebar: # ... (sidebar unchanged) ...
+    with st.sidebar:
         st.header("⚙️ Información de la App"); st.write(f"✅ mpmath: {'Disponible' if MPMATH_AVAILABLE else 'No disponible'}"); st.write(f"✅ Plotly: {'Disponible' if PLOTLY_AVAILABLE else 'No disponible'}")
         if REQUESTS_AVAILABLE: st.write(f"✅ API Gemini: {'Configurada' if app_config['gemini_api_key'] else 'Key no configurada'}")
         else: st.write("❌ API Gemini: No disponible ('requests' faltante)")
@@ -306,7 +307,7 @@ def main():
                                 num_tubes_precise = total_arc_length_for_tubes_display / Decimal(str(current_tube_len_f_selected_unit))
                                 full_tubes = math.floor(num_tubes_precise)
                                 remainder_fraction = num_tubes_precise - Decimal(str(full_tubes))
-                                num_tubes_output_str = f"{full_tubes} entero(s) + {remainder_fraction:.{display_prec_cfg}f} de tubo" # For AI
+                                num_tubes_output_str = f"{full_tubes} entero(s) + {remainder_fraction:.{display_prec_cfg}f} de tubo"
 
                                 st.subheader("🧩 Ajuste de Tubos en el Arco")
                                 st.write(f"Cantidad de Arcos Considerada: **{cantidad_arcos_val}**")
@@ -358,14 +359,17 @@ def main():
             st.session_state.tube_length_input_float = ex_data.get('tube_length', default_tube_val)
             st.rerun()
     st.markdown("---"); st.markdown("<div style='text-align:center;color:#666;margin-top:1rem'><small>Calculadora de Precisión Arcos/Tubos</small></div>", unsafe_allow_html=True)
-    js_script = ('<script>\n'
-                 'try {\n'
-                 '    const numberInputs = document.querySelectorAll(\'input[type="number"]\');\n'
-                 '    numberInputs.forEach(function(input) {\n'
-                 '        input.addEventListener(\'focus\', function() { this.select(); });\n'
-                 '    });\n'
-                 '} catch (e) { /* console.error(\'Error attaching focus listeners:\', e); */ }\n'
-                 '</script>')
+
+    js_script = (
+        '<script>\n'
+        'try {\n'
+        '    const numberInputs = document.querySelectorAll(\'input[type="number"]\');\n'
+        '    numberInputs.forEach(function(input) {\n'
+        '        input.addEventListener(\'focus\', function() { this.select(); });\n'
+        '    });\n'
+        '} catch (e) { /* console.error(\'Error attaching focus listeners:\', e); */ }\n'
+        '</script>'
+    )
     st.markdown(js_script, unsafe_allow_html=True)
 
 if __name__ == "__main__":
@@ -378,5 +382,3 @@ if __name__ == "__main__":
     if 'sagitta_input_float' not in st.session_state: st.session_state.sagitta_input_float = 10.0
     if 'tube_length_input_float' not in st.session_state: st.session_state.tube_length_input_float = default_tube_len_for_init
     main()
-
-```

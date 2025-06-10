@@ -1,5 +1,5 @@
-# File overwritten on 2024-07-15 to correct persistent syntax errors from stray markdown formatting.
 #!/usr/bin/env python3
+# File overwritten on 2024-07-15 to correct persistent syntax errors from stray markdown formatting.
 # """
 # 🔢 Calculadora de Precisión para Arcos y Tubos (Streamlit App)
 # """
@@ -48,7 +48,7 @@ def init_app_config():
     return {'precision': 28, 'display_precision_general': 1, 'display_precision_metrics': 1,
             'max_cache_entries': 20, 'cache_ttl': 1800, 'gemini_api_key': st.secrets.get("GOOGLE_API_KEY", "")}
 
-class OptimizedCalculator:
+class OptimizedCalculator: # ... (class definition remains unchanged) ...
     def __init__(self, precision: int = 28):
         self.precision = precision
         if MPMATH_AVAILABLE: mp.dps = self.precision
@@ -94,7 +94,7 @@ class OptimizedCalculator:
         except Exception as e: return {"error": f"Error inesperado en cálculo de arco: {e}"}
 
 @st.cache_data(ttl=1800, max_entries=10)
-def call_gemini_api(prompt: str, api_key: str) -> Dict[str, Any]:
+def call_gemini_api(prompt: str, api_key: str) -> Dict[str, Any]: # ... (no changes) ...
     if not api_key: return {"success": False, "error": "API key de Gemini no configurada."}
     if not REQUESTS_AVAILABLE: return {"success": False, "error": "Módulo 'requests' no disponible."}
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
@@ -113,7 +113,7 @@ def call_gemini_api(prompt: str, api_key: str) -> Dict[str, Any]:
     except Exception as e: return {"success": False, "error": f"Error procesando API: {str(e)}"}
 
 @st.cache_data(ttl=3600, max_entries=20)
-def calculate_radius_all_methods(chord_base_unit_float: float, sagitta_base_unit_float: float, internal_precision: int) -> Dict[str, Any]:
+def calculate_radius_all_methods(chord_base_unit_float: float, sagitta_base_unit_float: float, internal_precision: int) -> Dict[str, Any]: # ... (no changes) ...
     calc_context = getcontext(); calc_context.prec = internal_precision
     try:
         chord_base = Decimal(str(chord_base_unit_float)); sagitta_base = Decimal(str(sagitta_base_unit_float))
@@ -149,7 +149,7 @@ def calculate_radius_all_methods(chord_base_unit_float: float, sagitta_base_unit
         return {"success": True, "radius_final_dec_str": str(median_radius_base), "confidence_dec_str": str(confidence_dec), "methods_dec_str": {k: str(v) if isinstance(v,Decimal) else v for k,v in results_decimal.items()}, "sagitta_corrected_dec_str": str(sag_corr_base), "sagitta_incorrect_dec_str": str(sag_incorr_base), "error_percentage_dec_str": str(err_perc_dec), "arc_length_dec_str": arc_length_str, "central_angle_deg_str": central_angle_str, "arc_calculation_error": arc_calc_error_msg }
     except Exception as e: return {"error": f"Error general en núcleo de cálculo: {str(e)}"}
 
-def create_single_arc_visualization(chord_val, sagitta_val, radius_val, plot_title_prefix="Arco", display_precision_cfg=1, unit_name="Unidades"):
+def create_single_arc_visualization(chord_val, sagitta_val, radius_val, plot_title_prefix="Arco", display_precision_cfg=1, unit_name="Unidades"): # ... (no changes) ...
     if not PLOTLY_AVAILABLE: return None
     C, S, R = float(chord_val), float(sagitta_val), float(radius_val)
     if not (R > 1e-9 and S > 1e-9 and C > 1e-9 and R != float('inf') and S < C/2 and R >= S-(1e-9) and R >= C/2-(1e-9)):
@@ -168,20 +168,31 @@ def main():
 
     st.title("🔢 Calculadora de Precisión para Arcos y Tubos")
 
-    if 'selected_unit_name' not in st.session_state: st.session_state.selected_unit_name = UNIT_NAMES[0]
-    if 'cantidad_arcos_input' not in st.session_state: st.session_state.cantidad_arcos_input = 1
+    # --- Session State Initialization ---
+    if 'selected_unit_name' not in st.session_state:
+        st.session_state.selected_unit_name = UNIT_NAMES[0] # Default to Metros
+    if 'cantidad_arcos_input' not in st.session_state:
+        st.session_state.cantidad_arcos_input = 1
+
+    # MODIFIED: New defaults for chord and sagitta
+    if 'chord_input_float' not in st.session_state:
+        st.session_state.chord_input_float = 10.0
+    if 'sagitta_input_float' not in st.session_state:
+        st.session_state.sagitta_input_float = 2.5
+
+    # Default tube length needs to consider the selected unit for its initial display value.
     if 'tube_length_input_float' not in st.session_state:
         initial_unit_factor_to_base = UNITS_TO_METERS[st.session_state.selected_unit_name]
         st.session_state.tube_length_input_float = float(DEFAULT_TUBE_LENGTH_BASE_UNIT / initial_unit_factor_to_base)
-    if 'chord_input_float' not in st.session_state: st.session_state.chord_input_float = 100.0
-    if 'sagitta_input_float' not in st.session_state: st.session_state.sagitta_input_float = 10.0
 
     newly_selected_unit_name = st.selectbox("Unidad para Entradas/Resultados:", UNIT_NAMES, index=UNIT_NAMES.index(st.session_state.selected_unit_name), key="unit_selector_widget")
     if newly_selected_unit_name != st.session_state.selected_unit_name:
         old_unit_factor = UNITS_TO_METERS[st.session_state.selected_unit_name]
         new_unit_factor = UNITS_TO_METERS[newly_selected_unit_name]
+
         if abs(st.session_state.tube_length_input_float - float(DEFAULT_TUBE_LENGTH_BASE_UNIT / old_unit_factor)) < 1e-5:
             st.session_state.tube_length_input_float = float(DEFAULT_TUBE_LENGTH_BASE_UNIT / new_unit_factor)
+
         st.session_state.selected_unit_name = newly_selected_unit_name
         st.rerun()
 
@@ -286,7 +297,7 @@ def main():
                     if main_arc_plot_fig and PLOTLY_AVAILABLE: st.plotly_chart(main_arc_plot_fig, use_container_width=True)
 
                     flecha_tubo_calc_display = None
-                    num_tubes_output_str = "N/A" # For AI prompt
+                    num_tubes_output_str = "N/A"
 
                     if current_tube_len_f_selected_unit > 1e-9:
                         st.subheader("🏹 Cálculo de Flecha para Tubo")
@@ -304,17 +315,25 @@ def main():
 
                             if arc_length_display_one_arc is not None and arc_length_display_one_arc > Decimal('1e-7') and not arc_calc_err:
                                 total_arc_length_for_tubes_display = arc_length_display_one_arc * cantidad_arcos_val
-                                num_tubes_precise = total_arc_length_for_tubes_display / Decimal(str(current_tube_len_f_selected_unit))
-                                full_tubes = math.floor(num_tubes_precise)
-                                remainder_fraction = num_tubes_precise - Decimal(str(full_tubes))
-                                num_tubes_output_str = f"{full_tubes} entero(s) + {remainder_fraction:.{display_prec_cfg}f} de tubo"
+                                tube_len_selected_unit_dec = Decimal(str(current_tube_len_f_selected_unit))
+                                if tube_len_selected_unit_dec > Decimal('1e-9'):
+                                    num_tubes_precise = total_arc_length_for_tubes_display / tube_len_selected_unit_dec
+                                    full_tubes = math.floor(num_tubes_precise)
+                                    remainder_fraction = num_tubes_precise - Decimal(str(full_tubes))
+                                    remainder_length_display = remainder_fraction * tube_len_selected_unit_dec
+                                    num_tubes_output_str = f"{full_tubes} entero(s) y un segmento de {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display}"
+                                else:
+                                    num_tubes_output_str = "Longitud de tubo inválida para cálculo de ajuste."
+                                    full_tubes = 0; remainder_length_display = Decimal('0')
 
                                 st.subheader("🧩 Ajuste de Tubos en el Arco")
                                 st.write(f"Cantidad de Arcos Considerada: **{cantidad_arcos_val}**")
                                 st.write(f"Longitud Total de Arco a Cubrir: **{total_arc_length_for_tubes_display:.{display_prec_cfg}f} {selected_unit_name_for_display}**")
                                 st.write(f"Longitud de cada Tubo: **{current_tube_len_f_selected_unit:.{app_config['display_precision_metrics']}f} {selected_unit_name_for_display}**")
-                                st.metric(label="Resultado del Ajuste", value=f"{full_tubes} tubos + {remainder_fraction:.{display_prec_cfg}f} de tubo")
-                                st.caption(f"La fracción {remainder_fraction:.{display_prec_cfg}f} es del largo de un tubo de {current_tube_len_f_selected_unit:.{app_config['display_precision_metrics']}f} {selected_unit_name_for_display}.")
+                                if "entero(s)" in num_tubes_output_str :
+                                     st.metric(label="Resultado del Ajuste", value=f"{full_tubes} tubos + {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display}")
+                                     st.caption(f"El segmento adicional mide {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display} (equivale a {remainder_fraction:.{display_prec_cfg}f} del largo de un tubo).")
+                                else: st.warning(num_tubes_output_str)
                             elif arc_calc_err: st.caption(f"Ajuste de tubos no calculado (error en L_arco): {arc_calc_err}")
                         else: st.warning("No se calcula flecha de tubo: radio del arco principal no válido.")
 
@@ -373,12 +392,23 @@ def main():
     st.markdown(js_script, unsafe_allow_html=True)
 
 if __name__ == "__main__":
+    # Initialize session state carefully
     if 'selected_unit_name' not in st.session_state: st.session_state.selected_unit_name = UNIT_NAMES[0]
     if 'cantidad_arcos_input' not in st.session_state: st.session_state.cantidad_arcos_input = 1
-    initial_unit_name = st.session_state.selected_unit_name
+
+    initial_unit_name = st.session_state.selected_unit_name # Use already set or default unit for further defaults
     initial_unit_factor = UNITS_TO_METERS[initial_unit_name]
     default_tube_len_for_init = float(DEFAULT_TUBE_LENGTH_BASE_UNIT / initial_unit_factor)
-    if 'chord_input_float' not in st.session_state: st.session_state.chord_input_float = 100.0
-    if 'sagitta_input_float' not in st.session_state: st.session_state.sagitta_input_float = 10.0
-    if 'tube_length_input_float' not in st.session_state: st.session_state.tube_length_input_float = default_tube_len_for_init
+
+    # Set new defaults for chord and sagitta here, respecting the initial unit.
+    # These defaults are in the 'initial_unit_name' unit.
+    if 'chord_input_float' not in st.session_state:
+        st.session_state.chord_input_float = float(Decimal("10.0") / initial_unit_factor) if initial_unit_name != UNIT_NAMES[0] else 10.0
+    if 'sagitta_input_float' not in st.session_state:
+        st.session_state.sagitta_input_float = float(Decimal("2.5") / initial_unit_factor) if initial_unit_name != UNIT_NAMES[0] else 2.5
+
+    if 'tube_length_input_float' not in st.session_state:
+        st.session_state.tube_length_input_float = default_tube_len_for_init
     main()
+
+```

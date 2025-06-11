@@ -158,7 +158,24 @@ def create_single_arc_visualization(chord_val, sagitta_val, radius_val, plot_tit
     t_angles = np.linspace(-alpha, alpha, 100) ; x_arc, y_arc = R * np.sin(t_angles), k_center + R * np.cos(t_angles)
     fig = go.Figure(); fig.add_trace(go.Scatter(x=x_arc, y=y_arc, mode='lines', name='Arco', line=dict(color='blue', width=2))); fig.add_trace(go.Scatter(x=[-C/2, C/2], y=[0, 0], mode='lines', name='Cuerda', line=dict(color='red', dash='dash'))); fig.add_trace(go.Scatter(x=[0, 0], y=[0, S], mode='lines', name='Sagitta', line=dict(color='green', dash='dash')))
     fig.add_annotation(x=0, y=S * 0.5, text=f"S={S:.{display_precision_cfg}f}", showarrow=False, yshift=10, font=dict(size=10)); fig.add_annotation(x=0, y=-S*0.1, text=f"C={C:.{display_precision_cfg}f}", showarrow=False, yshift=-5, font=dict(size=10))
-    fig.update_layout(title_text=f"{plot_title_prefix} (Radio R={R:.{display_precision_cfg}f} {unit_name})", xaxis_title=f"Dimensión X ({unit_name})", yaxis_title=f"Dimensión Y ({unit_name})", yaxis_scaleanchor="x", legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5), margin=dict(t=50, b=120, l=20, r=20), height=500, dragmode="pan")
+    # Eliminar el título superior y agregarlo como anotación abajo
+    fig.update_layout(
+        xaxis_title=f"Dimensión X ({unit_name})",
+        yaxis_title=f"Dimensión Y ({unit_name})",
+        yaxis_scaleanchor="x",
+        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+        margin=dict(t=30, b=100, l=20, r=20),
+        height=500,
+        dragmode="pan",
+        title_text=None
+    )
+    fig.add_annotation(
+        text=f"<b>{plot_title_prefix} (Radio R={R:.{display_precision_cfg}f} {unit_name})</b>",
+        xref="paper", yref="paper",
+        x=0.5, y=-0.22, showarrow=False,
+        font=dict(size=16, color="#FFF"),
+        align="center"
+    )
     return fig
 
 def main():

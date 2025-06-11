@@ -457,18 +457,12 @@ if __name__ == "__main__":
     if 'cantidad_arcos_input' not in st.session_state:
         st.session_state.cantidad_arcos_input = 1
 
-    initial_unit_name = st.session_state.selected_unit_name
-    initial_unit_factor = UNITS_TO_METERS[initial_unit_name]
-
-    # Set new defaults for chord and sagitta here, these are now the numbers users see first.
-    # These are interpreted in the initial_unit_name.
+    # Ajustar valores por defecto en centímetros (10 m = 1000 cm, 2.5 m = 250 cm, 6 m = 600 cm)
     if 'chord_input_float' not in st.session_state:
-        st.session_state.chord_input_float = 10.0
+        st.session_state.chord_input_float = 1000.0
     if 'sagitta_input_float' not in st.session_state:
-        st.session_state.sagitta_input_float = 2.5
-
-    # Default for tube length remains dynamic based on selected unit and base 6m
+        st.session_state.sagitta_input_float = 250.0
     if 'tube_length_input_float' not in st.session_state:
-        st.session_state.tube_length_input_float = float(DEFAULT_TUBE_LENGTH_BASE_UNIT / initial_unit_factor)
+        st.session_state.tube_length_input_float = 600.0
 
     main()

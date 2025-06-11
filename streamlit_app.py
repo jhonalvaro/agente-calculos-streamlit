@@ -380,8 +380,8 @@ def main():
             st.session_state.selected_unit_name = UNIT_NAMES[0]
             st.session_state.cantidad_arcos_input = 1
             # When loading example, set chord/sagitta from example, and tube_length from example or dynamic default
-            st.session_state.chord_input_float = ex_data.get('chord', 10.0) # Default to 10.0 if not in example
-            st.session_state.sagitta_input_float = ex_data.get('sagitta', 2.5) # Default to 2.5 if not in example
+            st.session_state.chord_input_float = ex_data.get('chord', 10.0)
+            st.session_state.sagitta_input_float = ex_data.get('sagitta', 2.5)
             default_tube_val = float(DEFAULT_TUBE_LENGTH_BASE_UNIT / UNITS_TO_METERS[st.session_state.selected_unit_name])
             st.session_state.tube_length_input_float = ex_data.get('tube_length', default_tube_val)
             st.rerun()
@@ -423,3 +423,5 @@ if __name__ == "__main__":
     main()
 
 ```
+
+[end of streamlit_app.py]

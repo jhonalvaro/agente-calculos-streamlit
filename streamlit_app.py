@@ -453,7 +453,7 @@ def main():
 
 if __name__ == "__main__":
     if 'selected_unit_name' not in st.session_state:
-        st.session_state.selected_unit_name = UNIT_NAMES[0]
+        st.session_state.selected_unit_name = 'Centímetros (cm)'
     if 'cantidad_arcos_input' not in st.session_state:
         st.session_state.cantidad_arcos_input = 1
 

@@ -89,7 +89,7 @@ class OptimizedCalculator:
                 alpha_rad_float = math.acos(val_for_acos_float); theta_rad_float = 2 * alpha_rad_float
                 arc_length_dec = radius * Decimal(str(theta_rad_float))
                 central_angle_deg_dec = Decimal(str(math.degrees(theta_rad_float)))
-                return {"arc_length": arc_length_dec, "central_angle_deg": central_angle_deg_dec, "error": None}
+                return {"arc_length": arc_length_dec, "central_angle_deg": central_angle_dec, "error": None}
         except ValueError as ve: return {"error": f"Error de valor en cálculo de ángulo: {ve}"}
         except Exception as e: return {"error": f"Error inesperado en cálculo de arco: {e}"}
 
@@ -421,7 +421,3 @@ if __name__ == "__main__":
         st.session_state.tube_length_input_float = float(DEFAULT_TUBE_LENGTH_BASE_UNIT / initial_unit_factor)
 
     main()
-
-```
-
-[end of streamlit_app.py]

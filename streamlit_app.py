@@ -220,6 +220,38 @@ def main():
 
     st.info(f"Precisión interna: {app_config['precision']} dígitos. Entradas/Resultados en {selected_unit_name_for_display}. Resultados mostrados con {display_prec_cfg} decimal.")
 
+    # --- Configuración de precisión automática por unidad y control de usuario ---
+    DEFAULT_PRECISION_BY_UNIT = {
+        "Metros (m)": 3,           # 0.001 m = 1 mm
+        "Centímetros (cm)": 1,    # 0.1 cm = 1 mm
+        "Milímetros (mm)": 0,     # 1 mm
+        "Pulgadas (in)": 3,       # 1/32 in ≈ 0.79375 mm
+        "Pies (ft)": 3            # 1/32 ft ≈ 0.9525 cm
+    }
+
+    # Fracción mínima para pulgadas y pies (1/32)
+    MIN_FRACTION_INCH = 32
+
+    # --- Sidebar: Selector de precisión ---
+    with st.sidebar:
+        st.markdown("---")
+        st.subheader("🔧 Precisión de Visualización")
+        unidad_actual = st.session_state.get('selected_unit_name', UNIT_NAMES[0])
+        default_prec = DEFAULT_PRECISION_BY_UNIT.get(unidad_actual, 3)
+        if unidad_actual in ["Pulgadas (in)", "Pies (ft)"]:
+            custom_prec = st.number_input(
+                "Decimales (1/32 = 3 decimales)", min_value=0, max_value=5, value=default_prec, step=1,
+                help="Para pulgadas y pies, 3 decimales equivale a 1/32."
+            )
+            st.caption("Ejemplo: 3 decimales ≈ 1/32 de pulgada")
+        else:
+            custom_prec = st.number_input(
+                "Decimales de precisión (mm)", min_value=0, max_value=5, value=default_prec, step=1,
+                help="Ejemplo: 3 decimales en metros equivale a 1 mm."
+            )
+        st.session_state['display_precision_general'] = custom_prec
+        st.session_state['display_precision_metrics'] = custom_prec
+
     with st.sidebar:
         st.header("⚙️ Información de la App"); st.write(f"✅ mpmath: {'Disponible' if MPMATH_AVAILABLE else 'No disponible'}"); st.write(f"✅ Plotly: {'Disponible' if PLOTLY_AVAILABLE else 'No disponible'}")
         if REQUESTS_AVAILABLE: st.write(f"✅ API Gemini: {'Configurada' if app_config['gemini_api_key'] else 'Key no configurada'}")

@@ -277,6 +277,8 @@ def main():
         st.session_state.tube_length_input_float = ex_data.get('tube_length', float(DEFAULT_TUBE_LENGTH_BASE_UNIT / meter_unit_factor))
         del st.session_state.example_values_float; st.rerun()
 
+    # Usar la precisión seleccionada para todos los formatos de presentación
+    display_prec_cfg = st.session_state['display_precision_general']
     num_input_fmt_str = f"%.{display_prec_cfg}f"
     num_input_stp_val = 1.0 / (10**display_prec_cfg)
 

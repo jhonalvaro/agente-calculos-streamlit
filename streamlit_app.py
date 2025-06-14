@@ -267,7 +267,7 @@ def main():
     # --- Persistencia de valores usando query params ---
     import urllib.parse
     # Leer valores de la URL si existen
-    query_params = st.experimental_get_query_params()
+    query_params = st.query_params
     def get_param_float(key, default):
         try:
             val = query_params.get(key, [None])[0]
@@ -283,20 +283,23 @@ def main():
         except: pass
         return default
     # Inicializar los valores desde la URL si existen, usando .get para evitar AttributeError
-    st.session_state.chord_input_float = get_param_float('cuerda', st.session_state.get('chord_input_float', 10.0))
-    st.session_state.sagitta_input_float = get_param_float('sagitta', st.session_state.get('sagitta_input_float', 2.5))
-    st.session_state.tube_length_input_float = get_param_float('tubo', st.session_state.get('tube_length_input_float', 6.0))
-    st.session_state.desperdicio_input_float = get_param_float('desperdicio', st.session_state.get('desperdicio_input_float', 0.0))
-    st.session_state.cantidad_arcos_input = get_param_int('arcos', st.session_state.get('cantidad_arcos_input', 1))
+    if 'chord_input_float' not in st.session_state:
+        st.session_state.chord_input_float = get_param_float('cuerda', 10.0)
+    if 'sagitta_input_float' not in st.session_state:
+        st.session_state.sagitta_input_float = get_param_float('sagitta', 2.5)
+    if 'tube_length_input_float' not in st.session_state:
+        st.session_state.tube_length_input_float = get_param_float('tubo', 6.0)
+    if 'desperdicio_input_float' not in st.session_state:
+        st.session_state.desperdicio_input_float = get_param_float('desperdicio', 0.0)
+    if 'cantidad_arcos_input' not in st.session_state:
+        st.session_state.cantidad_arcos_input = get_param_int('arcos', 1)
     # Guardar los valores en la URL cada vez que cambian
     def update_query_params():
-        st.experimental_set_query_params(
-            cuerda=st.session_state.chord_input_float,
-            sagitta=st.session_state.sagitta_input_float,
-            tubo=st.session_state.tube_length_input_float,
-            desperdicio=st.session_state.desperdicio_input_float,
-            arcos=st.session_state.cantidad_arcos_input
-        )
+        st.query_params["cuerda"] = st.session_state.chord_input_float
+        st.query_params["sagitta"] = st.session_state.sagitta_input_float
+        st.query_params["tubo"] = st.session_state.tube_length_input_float
+        st.query_params["desperdicio"] = st.session_state.desperdicio_input_float
+        st.query_params["arcos"] = st.session_state.cantidad_arcos_input
     # Llamar a update_query_params después de cada input relevante
     st.session_state.chord_input_float = st.number_input(f"Cuerda (c) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.chord_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="chord_input_widget", help=f"Longitud de la cuerda del arco.", on_change=update_query_params)
     st.session_state.sagitta_input_float = st.number_input(f"Sagitta/Flecha (s) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.sagitta_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="sagitta_input_widget", help=f"Altura máxima del arco.", on_change=update_query_params)

@@ -520,6 +520,43 @@ def main():
     )
     st.markdown(js_script, unsafe_allow_html=True)
 
+    # Sección de asistente IA para responder preguntas del usuario
+    st.markdown('---')
+    st.subheader('🤖 Asistente IA: Consulta sobre tu cálculo')
+    user_question = st.text_area('Escribe tu pregunta sobre el cálculo realizado:', key='user_ia_question', height=80)
+    if st.button('Preguntar al Asistente IA', key='ask_ia_btn', use_container_width=True):
+        # Construir contexto con los datos actuales
+        contexto = []
+        contexto.append(f"Unidad seleccionada: {selected_unit_name_for_display}")
+        contexto.append(f"Cuerda: {st.session_state.chord_input_float}")
+        contexto.append(f"Sagitta: {st.session_state.sagitta_input_float}")
+        contexto.append(f"Longitud tubo: {st.session_state.tube_length_input_float}")
+        contexto.append(f"Desperdicio: {st.session_state.desperdicio_input_float}")
+        contexto.append(f"Cantidad de arcos: {st.session_state.cantidad_arcos_input}")
+        # Si ya hay resultados de cálculo, incluirlos
+        if 'radius_display' in locals():
+            contexto.append(f"Radio calculado: {radius_display}")
+        if 'arc_length_display_one_arc' in locals() and arc_length_display_one_arc is not None:
+            contexto.append(f"Longitud de arco: {arc_length_display_one_arc}")
+        if 'central_angle_display' in locals() and central_angle_display is not None:
+            contexto.append(f"Ángulo central: {central_angle_display}")
+        if 'tube_usable_length' in locals():
+            contexto.append(f"Longitud útil por tubo: {tube_usable_length}")
+        if 'num_tubes_output_str' in locals():
+            contexto.append(f"Resultado de ajuste de tubos: {num_tubes_output_str}")
+        # Construir prompt para IA
+        prompt = "Contexto del cálculo:\n" + "\n".join(contexto) + "\n\nPregunta del usuario: " + user_question + "\n\nResponde de forma clara, concisa y técnica. Si la pregunta no tiene sentido, indícalo educadamente."
+        if app_config['gemini_api_key']:
+            with st.spinner('Consultando al asistente IA...'):
+                ia_resp = call_gemini_api(prompt, app_config['gemini_api_key'])
+                if ia_resp['success']:
+                    st.success('Respuesta del Asistente IA:')
+                    st.markdown(ia_resp['response'])
+                else:
+                    st.error(f"Error IA: {ia_resp['error']}")
+        else:
+            st.warning('No hay API Key de Gemini configurada. Agrega tu clave en Secrets.')
+
 if __name__ == "__main__":
     if 'selected_unit_name' not in st.session_state:
         st.session_state.selected_unit_name = 'Centímetros (cm)'

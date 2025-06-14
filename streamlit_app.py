@@ -260,6 +260,10 @@ def main():
 
     st.header("📐 Entradas para Cálculo")
 
+    # --- Usar la precisión seleccionada para todos los formatos de presentación ---
+    display_prec_cfg = st.session_state.get('display_precision_general', 1)
+    num_input_fmt_str = f"%.{display_prec_cfg}f"
+    num_input_stp_val = 1.0 / (10**display_prec_cfg)
     # --- Persistencia de valores usando query params ---
     import urllib.parse
     # Leer valores de la URL si existen
@@ -324,7 +328,7 @@ def main():
         del st.session_state.example_values_float; st.rerun()
 
     # Usar la precisión seleccionada para todos los formatos de presentación
-    display_prec_cfg = st.session_state['display_precision_general']
+    display_prec_cfg = st.session_state.get('display_precision_general', 1)
     num_input_fmt_str = f"%.{display_prec_cfg}f"
     num_input_stp_val = 1.0 / (10**display_prec_cfg)
 

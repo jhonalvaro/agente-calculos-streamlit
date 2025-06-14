@@ -89,7 +89,7 @@ class OptimizedCalculator:
                 alpha_rad_float = math.acos(val_for_acos_float); theta_rad_float = 2 * alpha_rad_float
                 arc_length_dec = radius * Decimal(str(theta_rad_float))
                 central_angle_deg_dec = Decimal(str(math.degrees(theta_rad_float)))
-                return {"arc_length": arc_length_dec, "central_angle_deg": central_angle_deg_dec, "error": None}
+                return {"arc_length": arc_length_dec, "central_angle_deg": central_angle_dec, "error": None}
         except ValueError as ve: return {"error": f"Error de valor en cálculo de ángulo: {ve}"}
         except Exception as e: return {"error": f"Error inesperado en cálculo de arco: {e}"}
 
@@ -289,7 +289,11 @@ def main():
 
     # Nuevo campo: Desperdicio por tubo
     if 'desperdicio_input_float' not in st.session_state:
-        st.session_state.desperdicio_input_float = 0.0
+        # Valor por defecto: 40 cm si la unidad es centímetros, si no, convertir 40 cm a la unidad seleccionada
+        if selected_unit_name_for_display == "Centímetros (cm)":
+            st.session_state.desperdicio_input_float = 40.0
+        else:
+            st.session_state.desperdicio_input_float = float(Decimal("0.4") / UNITS_TO_METERS[selected_unit_name_for_display])
     st.session_state.desperdicio_input_float = st.number_input(
         f"Desperdicio por tubo en {selected_unit_name_for_display}",
         min_value=0.0, max_value=1e12, value=st.session_state.desperdicio_input_float,

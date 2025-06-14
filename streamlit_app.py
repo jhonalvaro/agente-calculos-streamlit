@@ -282,15 +282,14 @@ def main():
                 return int(val)
         except: pass
         return default
-    # Inicializar los valores desde la URL si existen, usando .get para evitar AttributeError
-    if 'chord_input_float' not in st.session_state:
+    # Inicializar los valores desde la URL si existen, usando .get para evitar AttributeError    if 'chord_input_float' not in st.session_state:
         st.session_state.chord_input_float = get_param_float('cuerda', 10.0)
     if 'sagitta_input_float' not in st.session_state:
         st.session_state.sagitta_input_float = get_param_float('sagitta', 2.5)
     if 'tube_length_input_float' not in st.session_state:
         st.session_state.tube_length_input_float = get_param_float('tubo', 6.0)
     if 'desperdicio_input_float' not in st.session_state:
-        st.session_state.desperdicio_input_float = get_param_float('desperdicio', 0.0)
+        st.session_state.desperdicio_input_float = get_param_float('desperdicio', 40.0)
     if 'cantidad_arcos_input' not in st.session_state:
         st.session_state.cantidad_arcos_input = get_param_int('arcos', 1)
     # Guardar los valores en la URL cada vez que cambian
@@ -303,8 +302,7 @@ def main():
     # Llamar a update_query_params después de cada input relevante
     st.number_input(f"Cuerda (c) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.chord_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="chord_input_widget", help=f"Longitud de la cuerda del arco.", on_change=update_query_params)
     st.number_input(f"Sagitta/Flecha (s) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.sagitta_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="sagitta_input_widget", help=f"Altura máxima del arco.", on_change=update_query_params)
-    st.number_input(f"Longitud Tubo (L_tubo) en {selected_unit_name_for_display}", min_value=0.0, max_value=1e12, value=st.session_state.tube_length_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="tube_length_input_widget", help=f"Longitud del tubo a rolar (opcional).", on_change=update_query_params)
-    st.number_input(
+    st.number_input(f"Longitud Tubo (L_tubo) en {selected_unit_name_for_display}", min_value=0.0, max_value=1e12, value=st.session_state.tube_length_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="tube_length_input_widget", help=f"Longitud del tubo a rolar (opcional).", on_change=update_query_params)    st.number_input(
         f"Desperdicio por tubo en {selected_unit_name_for_display}",
         min_value=0.0, max_value=1e12, value=st.session_state.desperdicio_input_float,
         step=num_input_stp_val, format=num_input_fmt_str, key="desperdicio_input_widget",
@@ -316,7 +314,7 @@ def main():
         step=1, format="%d", key="cantidad_arcos_widget", help="Número total de arcos idénticos a cubrir con los tubos.",
         on_change=update_query_params
     )
-
+    
     if 'example_values_float' in st.session_state:
         ex_data = st.session_state.example_values_float
         st.session_state.selected_unit_name = UNIT_NAMES[0]
@@ -329,27 +327,6 @@ def main():
         meter_unit_factor = UNITS_TO_METERS[UNIT_NAMES[0]] # Factor for meters is 1.0
         st.session_state.tube_length_input_float = ex_data.get('tube_length', float(DEFAULT_TUBE_LENGTH_BASE_UNIT / meter_unit_factor))
         del st.session_state.example_values_float; st.rerun()
-
-    # Usar la precisión seleccionada para todos los formatos de presentación
-    display_prec_cfg = st.session_state.get('display_precision_general', 1)
-    num_input_fmt_str = f"%.{display_prec_cfg}f"
-    num_input_stp_val = 1.0 / (10**display_prec_cfg)
-
-    st.number_input(f"Cuerda (c) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.chord_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="chord_input_widget", help=f"Longitud de la cuerda del arco.", on_change=update_query_params)
-    st.number_input(f"Sagitta/Flecha (s) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.sagitta_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="sagitta_input_widget", help=f"Altura máxima del arco.", on_change=update_query_params)
-    st.number_input(f"Longitud Tubo (L_tubo) en {selected_unit_name_for_display}", min_value=0.0, max_value=1e12, value=st.session_state.tube_length_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="tube_length_input_widget", help=f"Longitud del tubo a rolar (opcional).", on_change=update_query_params)
-    st.number_input(
-        f"Desperdicio por tubo en {selected_unit_name_for_display}",
-        min_value=0.0, max_value=1e12, value=st.session_state.desperdicio_input_float,
-        step=num_input_stp_val, format=num_input_fmt_str, key="desperdicio_input_widget",
-        help="Longitud de cada tubo que se pierde como desperdicio y no es útil para cubrir el arco.",
-        on_change=update_query_params
-    )
-    st.number_input(
-        "Cantidad de Arcos a cubrir", min_value=1, value=st.session_state.cantidad_arcos_input,
-        step=1, format="%d", key="cantidad_arcos_widget", help="Número total de arcos idénticos a cubrir con los tubos.",
-        on_change=update_query_params
-    )
 
     if st.button("🚀 Calcular", type="primary", use_container_width=True):
         current_chord_f_selected_unit = st.session_state.chord_input_float

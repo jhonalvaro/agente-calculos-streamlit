@@ -278,12 +278,12 @@ def main():
                 return int(val)
         except: pass
         return default
-    # Inicializar los valores desde la URL si existen
-    st.session_state.chord_input_float = get_param_float('cuerda', st.session_state.chord_input_float)
-    st.session_state.sagitta_input_float = get_param_float('sagitta', st.session_state.sagitta_input_float)
-    st.session_state.tube_length_input_float = get_param_float('tubo', st.session_state.tube_length_input_float)
-    st.session_state.desperdicio_input_float = get_param_float('desperdicio', st.session_state.desperdicio_input_float)
-    st.session_state.cantidad_arcos_input = get_param_int('arcos', st.session_state.cantidad_arcos_input)
+    # Inicializar los valores desde la URL si existen, usando .get para evitar AttributeError
+    st.session_state.chord_input_float = get_param_float('cuerda', st.session_state.get('chord_input_float', 10.0))
+    st.session_state.sagitta_input_float = get_param_float('sagitta', st.session_state.get('sagitta_input_float', 2.5))
+    st.session_state.tube_length_input_float = get_param_float('tubo', st.session_state.get('tube_length_input_float', 6.0))
+    st.session_state.desperdicio_input_float = get_param_float('desperdicio', st.session_state.get('desperdicio_input_float', 0.0))
+    st.session_state.cantidad_arcos_input = get_param_int('arcos', st.session_state.get('cantidad_arcos_input', 1))
     # Guardar los valores en la URL cada vez que cambian
     def update_query_params():
         st.experimental_set_query_params(

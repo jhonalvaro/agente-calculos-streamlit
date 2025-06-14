@@ -45,8 +45,15 @@ except ImportError: PLOTLY_AVAILABLE = False
 
 @st.cache_resource
 def init_app_config():
-    return {'precision': 28, 'display_precision_general': 1, 'display_precision_metrics': 1,
-            'max_cache_entries': 20, 'cache_ttl': 1800, 'gemini_api_key': st.secrets.get("GOOGLE_API_KEY", "")}
+    return {
+        'precision': 28,
+        'display_precision_general': 1,
+        'display_precision_metrics': 1,
+        'max_cache_entries': 20,
+        'cache_ttl': 1800,
+        # API Key de Gemini obtenida desde secrets
+        'gemini_api_key': st.secrets.get("GOOGLE_API_KEY", "")
+    }
 
 class OptimizedCalculator:
     def __init__(self, precision: int = 28):

@@ -294,11 +294,13 @@ def main():
         st.session_state.cantidad_arcos_input = get_param_int('arcos', 1)
     # Guardar los valores en la URL cada vez que cambian
     def update_query_params():
-        st.query_params["cuerda"] = st.session_state.chord_input_float
-        st.query_params["sagitta"] = st.session_state.sagitta_input_float
-        st.query_params["tubo"] = st.session_state.tube_length_input_float
-        st.query_params["desperdicio"] = st.session_state.desperdicio_input_float
-        st.query_params["arcos"] = st.session_state.cantidad_arcos_input
+        st.query_params.update({
+            "cuerda": str(st.session_state.chord_input_float),
+            "sagitta": str(st.session_state.sagitta_input_float),
+            "tubo": str(st.session_state.tube_length_input_float),
+            "desperdicio": str(st.session_state.desperdicio_input_float),
+            "arcos": str(st.session_state.cantidad_arcos_input)
+        })
     # Llamar a update_query_params después de cada input relevante
     st.number_input(f"Cuerda (c) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.chord_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="chord_input_widget", help=f"Longitud de la cuerda del arco.", on_change=update_query_params)
     st.number_input(f"Sagitta/Flecha (s) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.sagitta_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="sagitta_input_widget", help=f"Altura máxima del arco.", on_change=update_query_params)

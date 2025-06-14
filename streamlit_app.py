@@ -96,7 +96,7 @@ class OptimizedCalculator:
                 alpha_rad_float = math.acos(val_for_acos_float); theta_rad_float = 2 * alpha_rad_float
                 arc_length_dec = radius * Decimal(str(theta_rad_float))
                 central_angle_deg_dec = Decimal(str(math.degrees(theta_rad_float)))
-                return {"arc_length": arc_length_dec, "central_angle_deg": central_angle_deg_dec, "error": None}
+                return {"arc_length": arc_length_dec, "central_angle_deg": central_angle_dec, "error": None}
         except ValueError as ve: return {"error": f"Error de valor en cálculo de ángulo: {ve}"}
         except Exception as e: return {"error": f"Error inesperado en cálculo de arco: {e}"}
 
@@ -488,6 +488,24 @@ def main():
                          with st.expander("🤖 Análisis con IA (Opcional)", expanded=False): st.warning("API Key de Gemini no configurada.")
                 else:
                     st.error(f"❌ {calc_results.get('error', 'Error en cálculo principal.')}")
+
+    # Mostrar resultados calculados si existen en session_state (persistencia visual)
+    if (
+        hasattr(st.session_state, 'radius_display') and st.session_state.radius_display is not None
+        and hasattr(st.session_state, 'arc_length_display_one_arc') and st.session_state.arc_length_display_one_arc is not None
+    ):
+        display_prec_cfg = st.session_state.get('display_precision_general', 1)
+        st.success(f"✅ **Radio del Arco Principal (R): {st.session_state.radius_display:.{display_prec_cfg}f} {selected_unit_name_for_display}**")
+        st.subheader("📏 Dimensiones del Arco Principal (por unidad)")
+        col_L, col_A = st.columns(2)
+        col_L.metric(f"Longitud de 1 Arco (L_arco)", f"{st.session_state.arc_length_display_one_arc:.{display_prec_cfg}f} {selected_unit_name_for_display}")
+        if hasattr(st.session_state, 'central_angle_display') and st.session_state.central_angle_display is not None:
+            col_A.metric("Ángulo Central (por arco)", f"{st.session_state.central_angle_display:.{display_prec_cfg}f}°")
+        # Ajuste de tubos
+        if hasattr(st.session_state, 'tube_usable_length') and st.session_state.tube_usable_length is not None and hasattr(st.session_state, 'num_tubes_output_str') and st.session_state.num_tubes_output_str is not None:
+            st.subheader("🧩 Ajuste de Tubos en el Arco")
+            st.write(f"Longitud útil por tubo: **{st.session_state.tube_usable_length:.{display_prec_cfg}f} {selected_unit_name_for_display}**")
+            st.write(f"{st.session_state.num_tubes_output_str}")
 
     st.subheader("📋 Ejemplos")
     examples_float_data = [{"name": "Arco Estándar", "chord": 100.0, "sagitta": 10.0, "tube_length": 50.0},{"name": "Puente Pequeño", "chord": 50.0, "sagitta": 5.0},{"name": "Lente Óptica", "chord": 10.0, "sagitta": 0.5, "tube_length": 8.0},{"name": "Curva Suave", "chord": 1000.0, "sagitta": 25.0, "tube_length": 200.0}]

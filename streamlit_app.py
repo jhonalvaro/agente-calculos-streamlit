@@ -525,7 +525,7 @@ def main():
     st.subheader('🤖 Asistente IA: Consulta sobre tu cálculo')
     user_question = st.text_area('Escribe tu pregunta sobre el cálculo realizado:', key='user_ia_question', height=80)
     if st.button('Preguntar al Asistente IA', key='ask_ia_btn', use_container_width=True):
-        # Construir contexto con los datos actuales
+        # Construir contexto con los datos actuales desde session_state
         contexto = []
         contexto.append(f"Unidad seleccionada: {selected_unit_name_for_display}")
         contexto.append(f"Cuerda: {st.session_state.chord_input_float}")
@@ -533,25 +533,25 @@ def main():
         contexto.append(f"Longitud tubo: {st.session_state.tube_length_input_float}")
         contexto.append(f"Desperdicio: {st.session_state.desperdicio_input_float}")
         contexto.append(f"Cantidad de arcos: {st.session_state.cantidad_arcos_input}")
-        if 'radius_display' in locals():
-            contexto.append(f"Radio calculado: {radius_display}")
-        if 'arc_length_display_one_arc' in locals() and arc_length_display_one_arc is not None:
-            contexto.append(f"Longitud de arco (1 arco): {arc_length_display_one_arc}")
-        if 'central_angle_display' in locals() and central_angle_display is not None:
-            contexto.append(f"Ángulo central: {central_angle_display}")
-        if 'arc_length_display_one_arc' in locals() and arc_length_display_one_arc is not None and 'cantidad_arcos_input' in st.session_state:
-            total_arc_length = arc_length_display_one_arc * st.session_state.cantidad_arcos_input
+        if hasattr(st.session_state, 'radius_display') and st.session_state.radius_display is not None:
+            contexto.append(f"Radio calculado: {st.session_state.radius_display}")
+        if hasattr(st.session_state, 'arc_length_display_one_arc') and st.session_state.arc_length_display_one_arc is not None:
+            contexto.append(f"Longitud de arco (1 arco): {st.session_state.arc_length_display_one_arc}")
+        if hasattr(st.session_state, 'central_angle_display') and st.session_state.central_angle_display is not None:
+            contexto.append(f"Ángulo central: {st.session_state.central_angle_display}")
+        if hasattr(st.session_state, 'arc_length_display_one_arc') and st.session_state.arc_length_display_one_arc is not None and 'cantidad_arcos_input' in st.session_state:
+            total_arc_length = st.session_state.arc_length_display_one_arc * st.session_state.cantidad_arcos_input
             contexto.append(f"Longitud total de arco a cubrir: {total_arc_length}")
-        if 'tube_usable_length' in locals():
-            contexto.append(f"Longitud útil por tubo: {tube_usable_length}")
+        if hasattr(st.session_state, 'tube_usable_length') and st.session_state.tube_usable_length is not None:
+            contexto.append(f"Longitud útil por tubo: {st.session_state.tube_usable_length}")
         else:
             try:
                 tube_usable_length_calc = float(st.session_state.tube_length_input_float) - float(st.session_state.desperdicio_input_float)
                 if tube_usable_length_calc > 0:
                     contexto.append(f"Longitud útil por tubo: {tube_usable_length_calc}")
             except: pass
-        if 'num_tubes_output_str' in locals():
-            contexto.append(f"Resultado de ajuste de tubos: {num_tubes_output_str}")
+        if hasattr(st.session_state, 'num_tubes_output_str') and st.session_state.num_tubes_output_str is not None:
+            contexto.append(f"Resultado de ajuste de tubos: {st.session_state.num_tubes_output_str}")
         # Construir prompt para IA (primero la pregunta, luego los datos)
         prompt = (
             "Pregunta del usuario: " + user_question +

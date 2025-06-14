@@ -533,19 +533,32 @@ def main():
         contexto.append(f"Longitud tubo: {st.session_state.tube_length_input_float}")
         contexto.append(f"Desperdicio: {st.session_state.desperdicio_input_float}")
         contexto.append(f"Cantidad de arcos: {st.session_state.cantidad_arcos_input}")
-        # Si ya hay resultados de cálculo, incluirlos
         if 'radius_display' in locals():
             contexto.append(f"Radio calculado: {radius_display}")
         if 'arc_length_display_one_arc' in locals() and arc_length_display_one_arc is not None:
-            contexto.append(f"Longitud de arco: {arc_length_display_one_arc}")
+            contexto.append(f"Longitud de arco (1 arco): {arc_length_display_one_arc}")
         if 'central_angle_display' in locals() and central_angle_display is not None:
             contexto.append(f"Ángulo central: {central_angle_display}")
+        if 'arc_length_display_one_arc' in locals() and arc_length_display_one_arc is not None and 'cantidad_arcos_input' in st.session_state:
+            total_arc_length = arc_length_display_one_arc * st.session_state.cantidad_arcos_input
+            contexto.append(f"Longitud total de arco a cubrir: {total_arc_length}")
         if 'tube_usable_length' in locals():
             contexto.append(f"Longitud útil por tubo: {tube_usable_length}")
+        else:
+            try:
+                tube_usable_length_calc = float(st.session_state.tube_length_input_float) - float(st.session_state.desperdicio_input_float)
+                if tube_usable_length_calc > 0:
+                    contexto.append(f"Longitud útil por tubo: {tube_usable_length_calc}")
+            except: pass
         if 'num_tubes_output_str' in locals():
             contexto.append(f"Resultado de ajuste de tubos: {num_tubes_output_str}")
-        # Construir prompt para IA
-        prompt = "Contexto del cálculo:\n" + "\n".join(contexto) + "\n\nPregunta del usuario: " + user_question + "\n\nResponde de forma clara, concisa y técnica. Si la pregunta no tiene sentido, indícalo educadamente."
+        # Construir prompt para IA (primero la pregunta, luego los datos)
+        prompt = (
+            "Pregunta del usuario: " + user_question +
+            "\n\nDatos de entrada y resultados calculados en la aplicación (usa toda esta información para responder):\n" +
+            "\n".join(contexto) +
+            "\n\nResponde de forma clara, concisa y técnica. Si la pregunta es sobre cuántos tubos se necesitan, usa la longitud total de arco a cubrir y la longitud útil de cada tubo para calcularlo. Si la pregunta no tiene sentido, indícalo educadamente."
+        )
         if app_config['gemini_api_key']:
             with st.spinner('Consultando al asistente IA...'):
                 ia_resp = call_gemini_api(prompt, app_config['gemini_api_key'])

@@ -89,7 +89,7 @@ class OptimizedCalculator:
                 alpha_rad_float = math.acos(val_for_acos_float); theta_rad_float = 2 * alpha_rad_float
                 arc_length_dec = radius * Decimal(str(theta_rad_float))
                 central_angle_deg_dec = Decimal(str(math.degrees(theta_rad_float)))
-                return {"arc_length": arc_length_dec, "central_angle_deg": central_angle_dec, "error": None}
+                return {"arc_length": arc_length_dec, "central_angle_deg": central_angle_deg_dec, "error": None}
         except ValueError as ve: return {"error": f"Error de valor en cálculo de ángulo: {ve}"}
         except Exception as e: return {"error": f"Error inesperado en cálculo de arco: {e}"}
 
@@ -302,7 +302,13 @@ def main():
     # Llamar a update_query_params después de cada input relevante
     st.number_input(f"Cuerda (c) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.chord_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="chord_input_widget", help=f"Longitud de la cuerda del arco.", on_change=update_query_params)
     st.number_input(f"Sagitta/Flecha (s) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.sagitta_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="sagitta_input_widget", help=f"Altura máxima del arco.", on_change=update_query_params)
-    st.number_input(f"Longitud Tubo (L_tubo) en {selected_unit_name_for_display}", min_value=0.0, max_value=1e12, value=st.session_state.tube_length_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="tube_length_input_widget", help=f"Longitud del tubo a rolar (opcional).", on_change=update_query_params)    st.number_input(
+    st.number_input(f"Longitud Tubo (L_tubo) en {selected_unit_name_for_display}",
+        min_value=0.0, max_value=1e12, value=st.session_state.tube_length_input_float,
+        step=num_input_stp_val, format=num_input_fmt_str, key="tube_length_input_widget",
+        help=f"Longitud del tubo a rolar (opcional).",
+        on_change=update_query_params
+    )
+    st.number_input(
         f"Desperdicio por tubo en {selected_unit_name_for_display}",
         min_value=0.0, max_value=1e12, value=st.session_state.desperdicio_input_float,
         step=num_input_stp_val, format=num_input_fmt_str, key="desperdicio_input_widget",

@@ -144,7 +144,7 @@ def calculate_radius_all_methods(chord_base_unit_float: float, sagitta_base_unit
         sag_incorr_base = chord_base**2 / (Decimal('2')*median_radius_base) if median_radius_base!=Decimal('0') else Decimal('inf')
         err_perc_dec = Decimal('inf')
         if sag_corr_base.is_finite() and sag_corr_base != Decimal('0'):
-            if sag_incorr_base.is_finite(): err_perc_dec = abs(sag_incorr_base - sag_corr_base) / sag_corr_base * Decimal('100')
+            if sag_incorr_base.is_finite(): err_perc_dec = abs( sag_incorr_base - sag_corr_base) / sag_corr_base * Decimal('100')
         elif sag_incorr_base == sag_corr_base: err_perc_dec = Decimal('0')
         return {"success": True, "radius_final_dec_str": str(median_radius_base), "confidence_dec_str": str(confidence_dec), "methods_dec_str": {k: str(v) if isinstance(v,Decimal) else v for k,v in results_decimal.items()}, "sagitta_corrected_dec_str": str(sag_corr_base), "sagitta_incorrect_dec_str": str(sag_incorr_base), "error_percentage_dec_str": str(err_perc_dec), "arc_length_dec_str": arc_length_str, "central_angle_deg_str": central_angle_str, "arc_calculation_error": arc_calc_error_msg }
     except Exception as e: return {"error": f"Error general en núcleo de cálculo: {str(e)}"}
@@ -450,5 +450,3 @@ if __name__ == "__main__":
         st.session_state.tube_length_input_float = float(DEFAULT_TUBE_LENGTH_BASE_UNIT / initial_unit_factor)
 
     main()
-
-```

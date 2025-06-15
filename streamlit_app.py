@@ -181,6 +181,8 @@ def main():
     if 'tube_length_input_float' not in st.session_state:
         initial_unit_factor_to_base = UNITS_TO_METERS[st.session_state.selected_unit_name]
         st.session_state.tube_length_input_float = float(DEFAULT_TUBE_LENGTH_BASE_UNIT / initial_unit_factor_to_base)
+    if 'desperdicio_tubo_float' not in st.session_state:
+        st.session_state.desperdicio_tubo_float = 0.0 # Default to 0 waste
 
     newly_selected_unit_name = st.selectbox("Unidad para Entradas/Resultados:", UNIT_NAMES, index=UNIT_NAMES.index(st.session_state.selected_unit_name), key="unit_selector_widget")
 
@@ -238,11 +240,21 @@ def main():
     st.session_state.chord_input_float = st.number_input(f"Cuerda (c) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.chord_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="chord_input_widget", help=f"Longitud de la cuerda del arco.")
     st.session_state.sagitta_input_float = st.number_input(f"Sagitta/Flecha (s) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.sagitta_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="sagitta_input_widget", help=f"Altura máxima del arco.")
     st.session_state.tube_length_input_float = st.number_input(f"Longitud Tubo (L_tubo) en {selected_unit_name_for_display}", min_value=0.0, max_value=1e12, value=st.session_state.tube_length_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="tube_length_input_widget", help=f"Longitud del tubo a rolar (opcional).")
+    st.session_state.desperdicio_tubo_float = st.number_input(
+        f"Desperdicio por tubo en {selected_unit_name_for_display}",
+        min_value=0.0,
+        value=st.session_state.desperdicio_tubo_float,
+        step=num_input_stp_val, # Use existing step value
+        format=num_input_fmt_str, # Use existing format string
+        key="desperdicio_tubo_widget",
+        help="Cantidad de material que se pierde o es inutilizable por cada tubo."
+    )
 
     if st.button("🚀 Calcular", type="primary", use_container_width=True):
         current_chord_f_selected_unit = st.session_state.chord_input_float
         current_sagitta_f_selected_unit = st.session_state.sagitta_input_float
         current_tube_len_f_selected_unit = st.session_state.tube_length_input_float
+        current_desperdicio_f_selected_unit = st.session_state.desperdicio_tubo_float # New line
         cantidad_arcos_val = st.session_state.cantidad_arcos_widget # MODIFIED KEY
 
         chord_base_f = current_chord_f_selected_unit * float(factor_to_base_unit)
@@ -252,6 +264,8 @@ def main():
         elif Decimal(str(current_sagitta_f_selected_unit)) >= Decimal(str(current_chord_f_selected_unit)) / Decimal('2'):
             st.error(f"❌ Sagitta (s={current_sagitta_f_selected_unit:.{display_prec_cfg}f}) debe ser < mitad de Cuerda (c/2 = {current_chord_f_selected_unit/2:.{display_prec_cfg}f}).")
         elif current_tube_len_f_selected_unit < 0.0 and abs(current_tube_len_f_selected_unit) > 1e-9 : st.error("❌ Longitud del Tubo no puede ser negativa (0 si no se usa).")
+        elif current_desperdicio_f_selected_unit < 0.0: # New validation
+            st.error("❌ Desperdicio por tubo no puede ser negativo.")
         elif cantidad_arcos_val < 1: st.error("❌ Cantidad de Arcos debe ser al menos 1.")
         else:
             # ... (rest of the calculation and display logic remains the same as previous correct version) ...
@@ -325,24 +339,38 @@ def main():
 
                             if arc_length_display_one_arc is not None and arc_length_display_one_arc > Decimal('1e-7') and not arc_calc_err:
                                 total_arc_length_for_tubes_display = arc_length_display_one_arc * cantidad_arcos_val
-                                tube_len_selected_unit_dec = Decimal(str(current_tube_len_f_selected_unit))
-                                if tube_len_selected_unit_dec > Decimal('1e-9'):
-                                    num_tubes_precise = total_arc_length_for_tubes_display / tube_len_selected_unit_dec
-                                    full_tubes = math.floor(num_tubes_precise)
-                                    remainder_fraction = num_tubes_precise - Decimal(str(full_tubes))
-                                    remainder_length_display = remainder_fraction * tube_len_selected_unit_dec
-                                    num_tubes_output_str = f"{full_tubes} entero(s) y un segmento de {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display}"
+                                longitud_tubo_dec = Decimal(str(current_tube_len_f_selected_unit)) # Renamed for clarity from tube_len_selected_unit_dec
+                                desperdicio_tubo_dec = Decimal(str(current_desperdicio_f_selected_unit)) # New
+                                longitud_util_tubo_dec = longitud_tubo_dec - desperdicio_tubo_dec # New
+
+                                remainder_fraction = Decimal('0') # Initialize remainder_fraction
+
+                                if longitud_tubo_dec > Decimal('1e-9'):
+                                    if longitud_util_tubo_dec <= Decimal('1e-9'):
+                                        num_tubes_output_str = "Longitud útil del tubo (después de desperdicio) es demasiado pequeña o negativa."
+                                        full_tubes = 0
+                                        remainder_length_display = Decimal('0')
+                                    else:
+                                        num_tubes_precise = total_arc_length_for_tubes_display / longitud_util_tubo_dec # MODIFIED
+                                        full_tubes = math.floor(num_tubes_precise)
+                                        remainder_fraction = num_tubes_precise - Decimal(str(full_tubes))
+                                        remainder_length_display = remainder_fraction * longitud_util_tubo_dec # MODIFIED
+                                        num_tubes_output_str = f"{full_tubes} entero(s) y un segmento de {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display}"
                                 else:
                                     num_tubes_output_str = "Longitud de tubo inválida para cálculo de ajuste."
-                                    full_tubes = 0; remainder_length_display = Decimal('0')
+                                    full_tubes = 0
+                                    remainder_length_display = Decimal('0')
 
                                 st.subheader("🧩 Ajuste de Tubos en el Arco")
                                 st.write(f"Cantidad de Arcos Considerada: **{cantidad_arcos_val}**")
                                 st.write(f"Longitud Total de Arco a Cubrir: **{total_arc_length_for_tubes_display:.{display_prec_cfg}f} {selected_unit_name_for_display}**")
-                                st.write(f"Longitud de cada Tubo: **{current_tube_len_f_selected_unit:.{app_config['display_precision_metrics']}f} {selected_unit_name_for_display}**")
+                                st.write(f"Longitud de cada Tubo (bruta): **{longitud_tubo_dec:.{app_config['display_precision_metrics']}f} {selected_unit_name_for_display}**") # Display raw tube length
+                                st.write(f"Desperdicio por tubo: **{desperdicio_tubo_dec:.{app_config['display_precision_metrics']}f} {selected_unit_name_for_display}**") # New display
+                                st.write(f"Longitud útil por tubo: **{longitud_util_tubo_dec:.{app_config['display_precision_metrics']}f} {selected_unit_name_for_display}**") # New display
+
                                 if "entero(s)" in num_tubes_output_str :
                                      st.metric(label="Resultado del Ajuste", value=f"{full_tubes} tubos + {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display}")
-                                     st.caption(f"El segmento adicional mide {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display} (equivale a {remainder_fraction:.{display_prec_cfg}f} del largo de un tubo).")
+                                     st.caption(f"El segmento adicional mide {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display} (equivale a {remainder_fraction:.{display_prec_cfg}f} del largo útil de un tubo).") # MODIFIED caption
                                 else: st.warning(num_tubes_output_str)
                             elif arc_calc_err: st.caption(f"Ajuste de tubos no calculado (error en L_arco): {arc_calc_err}")
                         else: st.warning("No se calcula flecha de tubo: radio del arco principal no válido.")

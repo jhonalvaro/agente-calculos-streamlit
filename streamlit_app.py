@@ -662,3 +662,5 @@ if __name__ == "__main__":
         st.session_state.tube_length_input_float = float(DEFAULT_TUBE_LENGTH_BASE_UNIT / initial_unit_factor)
 
     main()
+
+[end of streamlit_app.py]

@@ -230,7 +230,7 @@ def main():
                 ("cuerda", "chord_input_float", float),
                 ("sagitta", "sagitta_input_float", float),
                 ("longitud de tubo", "tube_length_input_float", float),
-                ("longitud del tubo", "tube_length_input_float", float),
+                ("longitud del tubo", "tube_length_input_float", float), # Corrected indentation
                 ("cantidad de arcos", "cantidad_arcos_widget", int)
             ]:
                 patron = rf"cambiar {campo} a\s*([0-9]+\.?[0-9]*)"

@@ -380,6 +380,18 @@ def main():
                         try: central_angle_display = Decimal(central_angle_base_str)
                         except: arc_calc_err = arc_calc_err or "Error al convertir ángulo para display"
 
+                    # Guardar todos los resultados calculados en session_state para persistencia
+                    st.session_state.radius_display = radius_display
+                    st.session_state.arc_length_display_one_arc = arc_length_display_one_arc
+                    st.session_state.central_angle_display = central_angle_display
+                    st.session_state.arc_calc_err = arc_calc_err
+                    st.session_state.confidence_dec = Decimal(calc_results['confidence_dec_str'])
+                    st.session_state.methods_ui_data = [{"Método": k, f"Resultado (R)": f"{(Decimal(v)/factor_to_base_unit):.{display_prec_cfg}f}" if not v.startswith("Error") else v, "Estado": "✅" if not v.startswith("Error") else "❌"} for k,v in calc_results['methods_dec_str'].items()]
+                    st.session_state.computation_time = computation_time
+                    st.session_state.sag_corr_base_dec = Decimal(calc_results['sagitta_corrected_dec_str'])
+                    st.session_state.sag_incorr_base_dec = Decimal(calc_results['sagitta_incorrect_dec_str'])
+                    st.session_state.err_perc_dec = Decimal(calc_results['error_percentage_dec_str'])
+
                     st.success(f"✅ **Radio del Arco Principal (R): {radius_display:.{display_prec_cfg}f} {selected_unit_name_for_display}**")
 
                     if arc_calc_err: st.warning(f"Info cálculo de arco: {arc_calc_err}")
@@ -477,8 +489,7 @@ def main():
                                 prompt_lines.append(f"- Cantidad de Arcos: {cantidad_arcos_val}, L_arco Total: {total_arc_len_for_ai}.")
                                 prompt_lines.append(f"¿Es R geométricamente coherente con c y s? ¿Son L_arco y Ángulo coherentes?")
                                 prompt_lines.append(f"Si L_tubo = {current_tube_len_f_selected_unit:.{app_config['display_precision_metrics']}f} (>0), y s_tubo = {s_tubo_str_ai}, ¿es s_tubo coherente?")
-                                prompt_lines.append(f"Para L_arco Total y L_tubo, ¿cuántos tubos se necesitan ({num_tubes_output_str})?")
-                                prompt_lines.append(f"Explicación concisa.")
+                                prompt_lines.append(f"Para L_arco Total y L_tubo, ¿cuántos tubos se necesitan ({num_tubes_output_str})?")                                prompt_lines.append(f"Explicación concisa.")
                                 ai_prompt = "\n".join(prompt_lines)
 
                                 ai_response = call_gemini_api(ai_prompt, app_config['gemini_api_key'])
@@ -486,6 +497,42 @@ def main():
                                 else: st.error(f"Error IA: {ai_response['error']}")
                     elif not app_config['gemini_api_key'] and REQUESTS_AVAILABLE:
                          with st.expander("🤖 Análisis con IA (Opcional)", expanded=False): st.warning("API Key de Gemini no configurada.")
+                    
+                    # Guardar todos los resultados calculados en session_state para persistencia
+                    st.session_state.radius_display = radius_display
+                    st.session_state.arc_length_display_one_arc = arc_length_display_one_arc
+                    st.session_state.central_angle_display = central_angle_display
+                    st.session_state.arc_calc_err = arc_calc_err
+                    st.session_state.confidence_dec = confidence_dec
+                    st.session_state.methods_ui_data = methods_ui_data
+                    st.session_state.computation_time = computation_time
+                    st.session_state.sag_corr_display = sag_corr_display
+                    st.session_state.sag_incorr_display = sag_incorr_display
+                    st.session_state.err_perc_dec = err_perc_dec
+                    st.session_state.flecha_tubo_calc_display = flecha_tubo_calc_display
+                    
+                    # Guardar datos de tubos si fueron calculados
+                    if 'tube_usable_length' in locals():
+                        st.session_state.tube_usable_length = tube_usable_length
+                        st.session_state.num_tubes_output_str = num_tubes_output_str
+                        if 'total_arc_length_for_tubes_display' in locals():
+                            st.session_state.total_arc_length_for_tubes_display = total_arc_length_for_tubes_display
+                        if 'full_tubes' in locals():
+                            st.session_state.full_tubes = full_tubes
+                        if 'remainder_length_display' in locals():
+                            st.session_state.remainder_length_display = remainder_length_display
+                    
+                    # Guardar datos de tubos si fueron calculados
+                    if 'tube_usable_length' in locals():
+                        st.session_state.tube_usable_length = tube_usable_length
+                        st.session_state.num_tubes_output_str = num_tubes_output_str
+                        if 'total_arc_length_for_tubes_display' in locals():
+                            st.session_state.total_arc_length_for_tubes_display = total_arc_length_for_tubes_display
+                        if 'full_tubes' in locals():
+                            st.session_state.full_tubes = full_tubes
+                        if 'remainder_length_display' in locals():
+                            st.session_state.remainder_length_display = remainder_length_display
+                
                 else:
                     st.error(f"❌ {calc_results.get('error', 'Error en cálculo principal.')}")
 

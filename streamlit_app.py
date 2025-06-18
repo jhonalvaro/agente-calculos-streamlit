@@ -162,6 +162,10 @@ def create_single_arc_visualization(chord_val, sagitta_val, radius_val, plot_tit
     return fig
 
 def main():
+    global app_config
+    app_config = init_app_config()
+    getcontext().prec = app_config['precision']
+    display_prec_cfg = app_config['display_precision_general']
     # --- Bloque de Chat Asistente IA ---
     st.markdown("---")
     st.header("💬 Asistente IA (Gemini Flash 2)")
@@ -255,9 +259,7 @@ def main():
     # Mostrar historial de chat
     for h in st.session_state.chat_history[-8:]:
         st.markdown(f"<div style='background:#f5f5fa;padding:0.5em 1em;border-radius:8px;margin-bottom:0.5em;'><b>Usuario:</b> {h['user']}<br><b>Asistente:</b> {h['ai']}</div>", unsafe_allow_html=True)
-    app_config = init_app_config()
-    getcontext().prec = app_config['precision']
-    display_prec_cfg = app_config['display_precision_general']
+    # app_config ya inicializado arriba
 
     st.title("🔢 Calculadora de Precisión para Arcos y Tubos")
 
@@ -491,11 +493,13 @@ def main():
                     st.session_state.flecha_tubo_calc_display = flecha_tubo_calc_display
                     
                     # Guardar datos de tubos si fueron calculados
-                    if 'tube_usable_length' in locals():
+                    try:
                         st.session_state.tube_usable_length = tube_usable_length
                         st.session_state.num_tubes_output_str = num_tubes_output_str
                         if 'total_arc_length_for_tubes_display' in locals():
                             st.session_state.total_arc_length_for_tubes_display = total_arc_length_for_tubes_display
+                    except NameError:
+                        pass
                         if 'full_tubes' in locals():
                             st.session_state.full_tubes = full_tubes
                         if 'remainder_length_display' in locals():

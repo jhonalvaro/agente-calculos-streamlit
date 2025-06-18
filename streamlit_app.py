@@ -340,31 +340,128 @@ def main():
                 if calc_results.get("success"):
                     st.session_state.calculation_results_data = calc_results # Store full results
                     st.session_state.error_message = None
+                    # computation_time is already available from prior calculation step
+                    st.session_state.computation_time_value = computation_time
+
+                    # Extract base values and perform conversions
+                    radius_base_dec = Decimal(calc_results['radius_final_dec_str'])
+                    arc_length_base_str = calc_results.get('arc_length_dec_str', "N/A")
+                    central_angle_base_str = calc_results.get('central_angle_deg_str', "N/A")
+                    arc_calc_err = calc_results.get('arc_calculation_error')
+
+                    st.session_state.arc_calc_error_message = arc_calc_err
+
+                    radius_display = radius_base_dec / st.session_state.factor_to_base_unit_for_display
+                    st.session_state.radius_display_value = radius_display
+
+                    arc_length_display_one_arc, central_angle_display = None, None
+                    current_arc_calc_err = arc_calc_err # Use a local copy for modification during conversion
+                    if arc_length_base_str != "N/A" and not current_arc_calc_err:
+                        try:
+                            arc_length_display_one_arc = Decimal(arc_length_base_str) / st.session_state.factor_to_base_unit_for_display
+                        except InvalidOperation: # Catch potential conversion error for Decimal
+                            current_arc_calc_err = current_arc_calc_err or "Error al convertir long. arco para display (InvalidOperation)"
+                        except Exception as e: # Catch any other unexpected error
+                            current_arc_calc_err = current_arc_calc_err or f"Error inesperado al convertir long. arco: {str(e)}"
+
+                    if central_angle_base_str != "N/A" and not current_arc_calc_err:
+                        try:
+                            central_angle_display = Decimal(central_angle_base_str)
+                        except InvalidOperation:
+                            current_arc_calc_err = current_arc_calc_err or "Error al convertir ángulo para display (InvalidOperation)"
+                        except Exception as e:
+                            current_arc_calc_err = current_arc_calc_err or f"Error inesperado al convertir ángulo: {str(e)}"
+
+                    st.session_state.arc_length_display_one_arc_value = arc_length_display_one_arc
+                    st.session_state.central_angle_display_value = central_angle_display
+                    if current_arc_calc_err != arc_calc_err : # if new error was generated during conversion
+                        st.session_state.arc_calc_error_message = current_arc_calc_err
+
+
+                    st.session_state.confidence_metric_value = Decimal(calc_results['confidence_dec_str'])
+
+                    methods_ui_data = [{"Método": k, f"Resultado (R)": f"{(Decimal(v)/st.session_state.factor_to_base_unit_for_display):.{st.session_state.display_precision_cfg}f}" if not str(v).startswith("Error") else str(v), "Estado": "✅" if not str(v).startswith("Error") else "❌"} for k,v in calc_results['methods_dec_str'].items()]
+                    st.session_state.methods_ui_table_data = methods_ui_data
+
+                    sag_corr_base_dec = Decimal(calc_results['sagitta_corrected_dec_str'])
+                    sag_incorr_base_dec = Decimal(calc_results['sagitta_incorrect_dec_str'])
+                    st.session_state.err_perc_display_value = Decimal(calc_results['error_percentage_dec_str'])
+
+                    st.session_state.sag_corr_display_value = sag_corr_base_dec / st.session_state.factor_to_base_unit_for_display
+                    st.session_state.sag_incorr_display_value = sag_incorr_base_dec / st.session_state.factor_to_base_unit_for_display if sag_incorr_base_dec.is_finite() else Decimal('inf')
+
+                    st.session_state.main_arc_plot_fig_data = {
+                        "chord_val": Decimal(str(st.session_state.chord_input_float)), # Use current input from session state
+                        "sagitta_val": Decimal(str(st.session_state.sagitta_input_float)), # Use current input from session state
+                        "radius_val": radius_display,
+                        "plot_title_prefix": "Arco Principal",
+                        "display_precision_cfg": st.session_state.display_precision_cfg,
+                        "unit_name": st.session_state.selected_unit_name_for_display
+                    }
+
+                    # Tube calculation related state
+                    flecha_tubo_calc_display = None
+                    num_tubes_output_str = "N/A"
+                    st.session_state.tube_arc_plot_fig_data = None # Initialize
+
+                    if st.session_state.tube_length_input_float > 1e-9:
+                        ui_calc = OptimizedCalculator(app_config['precision'])
+                        if radius_base_dec.is_finite() and radius_base_dec > Decimal('0'):
+                            tube_len_base_dec = Decimal(str(st.session_state.tube_length_input_float)) * st.session_state.factor_to_base_unit_for_display
+                            flecha_tubo_base_dec = ui_calc.calculate_sagitta_corrected(tube_len_base_dec, radius_base_dec)
+                            flecha_tubo_calc_display = flecha_tubo_base_dec / st.session_state.factor_to_base_unit_for_display
+
+                            if flecha_tubo_calc_display is not None and flecha_tubo_calc_display > Decimal('1e-9'):
+                                st.session_state.tube_arc_plot_fig_data = {
+                                    "chord_val": Decimal(str(st.session_state.tube_length_input_float)),
+                                    "sagitta_val": flecha_tubo_calc_display,
+                                    "radius_val": radius_display,
+                                    "plot_title_prefix": "Tubo Rolado",
+                                    "display_precision_cfg": st.session_state.display_precision_cfg,
+                                    "unit_name": st.session_state.selected_unit_name_for_display
+                                }
+
+                            if arc_length_display_one_arc is not None and arc_length_display_one_arc > Decimal('1e-7') and not st.session_state.arc_calc_error_message:
+                                total_arc_length_for_tubes_display = arc_length_display_one_arc * st.session_state.cantidad_arcos_widget
+                                tube_len_selected_unit_dec = Decimal(str(st.session_state.tube_length_input_float))
+                                if tube_len_selected_unit_dec > Decimal('1e-9'):
+                                    num_tubes_precise = total_arc_length_for_tubes_display / tube_len_selected_unit_dec
+                                    full_tubes = math.floor(num_tubes_precise)
+                                    remainder_fraction = num_tubes_precise - Decimal(str(full_tubes))
+                                    remainder_length_display = remainder_fraction * tube_len_selected_unit_dec
+                                    num_tubes_output_str = f"{full_tubes} entero(s) y un segmento de {remainder_length_display:.{st.session_state.display_precision_cfg}f} {st.session_state.selected_unit_name_for_display}"
+                                else:
+                                    num_tubes_output_str = "Longitud de tubo inválida para cálculo de ajuste."
+
+                    st.session_state.flecha_tubo_calc_display_value = flecha_tubo_calc_display
+                    st.session_state.num_tubes_output_str_value = num_tubes_output_str
+
+                    # AI Analysis
+                    st.session_state.ai_response_content = None # Default
+                    if app_config['gemini_api_key'] and REQUESTS_AVAILABLE:
+                        s_tubo_str_ai = f"{flecha_tubo_calc_display:.{st.session_state.display_precision_cfg}f} {st.session_state.selected_unit_name_for_display}" if flecha_tubo_calc_display is not None else "N/A"
+                        arc_len_str_ai = f"{arc_length_display_one_arc:.{st.session_state.display_precision_cfg}f} {st.session_state.selected_unit_name_for_display}" if arc_length_display_one_arc is not None and arc_length_display_one_arc > Decimal('1e-7') and not st.session_state.arc_calc_error_message else "N/A"
+                        central_angle_str_ai = f"{central_angle_display:.{st.session_state.display_precision_cfg}f}°" if central_angle_display is not None and not st.session_state.arc_calc_error_message else "N/A"
+                        total_arc_len_for_ai = f"{(arc_length_display_one_arc * st.session_state.cantidad_arcos_widget):.{st.session_state.display_precision_cfg}f} {st.session_state.selected_unit_name_for_display}" if arc_length_display_one_arc is not None and arc_length_display_one_arc > Decimal('1e-7') and st.session_state.cantidad_arcos_widget >=1 and not st.session_state.arc_calc_error_message else "N/A"
+
+                        prompt_lines = [
+                            f"Análisis de cálculo de arco (unidades de entrada/salida: {st.session_state.selected_unit_name_for_display}):",
+                            f"- Cuerda (c): {st.session_state.chord_input_float:.{app_config['display_precision_metrics']}f}, Sagitta (s): {st.session_state.sagitta_input_float:.{app_config['display_precision_metrics']}f}, Radio calculado (R): {radius_display:.{st.session_state.display_precision_cfg}f}.",
+                            f"- Para 1 arco: Longitud (L_arco): {arc_len_str_ai}, Ángulo Central: {central_angle_str_ai}.",
+                            f"- Cantidad de Arcos: {st.session_state.cantidad_arcos_widget}, L_arco Total: {total_arc_len_for_ai}.",
+                            f"¿Es R geométricamente coherente con c y s? ¿Son L_arco y Ángulo coherentes?",
+                            f"Si L_tubo = {st.session_state.tube_length_input_float:.{app_config['display_precision_metrics']}f} (>0), y s_tubo = {s_tubo_str_ai}, ¿es s_tubo coherente?",
+                            f"Para L_arco Total y L_tubo, ¿cuántos tubos se necesitan ({num_tubes_output_str})?",
+                            f"Explicación concisa."
+                        ]
+                        ai_prompt = "\n".join(prompt_lines)
+                        ai_response = call_gemini_api(ai_prompt, app_config['gemini_api_key'])
+                        if ai_response["success"]:
+                            st.session_state.ai_response_content = ai_response["response"]
+                        else:
+                            st.session_state.ai_response_content = f"Error IA: {ai_response['error']}"
+
                     st.session_state.calculation_done = True
-
-                    # All actual display logic will be moved out of this block
-                    # The assignments to st.session_state variables are already done before this point in the code
-                    # So, this block will become much smaller or just pass if all assignments are confirmed above.
-
-                    # Values needed for display are already in session state:
-                    # st.session_state.radius_display_value
-                    # st.session_state.arc_length_display_one_arc_value
-                    # st.session_state.central_angle_display_value
-                    # st.session_state.confidence_metric_value
-                    # st.session_state.computation_time_value
-                    # st.session_state.methods_ui_table_data
-                    # st.session_state.sag_corr_display_value
-                    # st.session_state.sag_incorr_display_value
-                    # st.session_state.err_perc_display_value
-                    # st.session_state.main_arc_plot_fig_data
-                    # st.session_state.flecha_tubo_calc_display_value
-                    # st.session_state.tube_arc_plot_fig_data
-                    # st.session_state.num_tubes_output_str_value
-                    # st.session_state.arc_calc_error_message
-                    # st.session_state.ai_response_content
-
-                    # The direct st.success, st.warning, st.metric, st.table, st.plotly_chart, st.expander calls
-                    # will be removed from here.
 
                 else: # calc_results.get("success") is False
                     error_msg_from_calc = f"❌ {calc_results.get('error', 'Error en cálculo principal.')}"

@@ -22,8 +22,6 @@ plotly>=5.0.0
 # Configuración opcional (ligero)
 python-dotenv>=1.0.0
 
-# Librería Suna desde GitHub
-suna @ git+https://github.com/kortix-ai/suna.git
 
 # NOTA CRÍTICA:
 # Total estimated RAM usage: ~350-450MB (Plotly adds some overhead)

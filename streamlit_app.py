@@ -172,7 +172,7 @@ def main():
     if st.button("🔄 Resetear chat y contexto", key="reset_chat_btn", use_container_width=True):
         st.session_state.chat_history = []
         st.session_state.chat_context = {}
-        st.experimental_rerun()
+        st.rerun()
 
     # Sugerencias dinámicas según contexto
     sugerencias = [
@@ -193,7 +193,7 @@ def main():
     for idx, sug in enumerate(sugerencias):
         if cols_sug[idx].button(sug, key=f"sug_{idx}", use_container_width=True):
             st.session_state.chat_input = sug
-            st.experimental_rerun()
+            st.rerun()
 
     # Entrada de usuario
     chat_input = st.text_input("Escribe tu pregunta o instrucción:", value=st.session_state.get('chat_input', ''), key="chat_input_box")
@@ -250,7 +250,7 @@ def main():
         else:
             st.session_state.chat_history.append({"user": chat_input, "ai": f"❌ {ai_response['error']}"})
             st.session_state.chat_input = chat_input
-        st.experimental_rerun()
+        st.rerun()
 
     # Mostrar historial de chat
     for h in st.session_state.chat_history[-8:]:

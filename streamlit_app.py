@@ -305,10 +305,10 @@ def main():
     st.header("📐 Entradas para Cálculo")
 
     # Use 'cantidad_arcos_widget' as key and for value persistence
-    st.session_state.cantidad_arcos_widget = st.number_input( # MODIFIED: Assignment to session_state here is redundant due to 'key' but ensures consistency
+    st.number_input(
         "Cantidad de Arcos a cubrir",
         min_value=1,
-        value=st.session_state.cantidad_arcos_widget, # MODIFIED KEY
+        value=st.session_state.cantidad_arcos_widget,
         step=1,
         format="%d",
         key="cantidad_arcos_widget",

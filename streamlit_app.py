@@ -162,6 +162,7 @@ def create_single_arc_visualization(chord_val, sagitta_val, radius_val, plot_tit
     return fig
 
 def main():
+    tube_usable_length = None  # Inicialización para evitar errores de variable no definida
     global app_config
     app_config = init_app_config()
     getcontext().prec = app_config['precision']
@@ -205,13 +206,13 @@ def main():
 
     # Procesar mensaje
     if enviar and chat_input.strip():
-        # Construir contexto para IA
+        # Construir contexto para IA con TODOS los datos de entrada actuales y resultados
         contexto = []
-        contexto.append(f"Unidad: {st.session_state.selected_unit_name}")
-        contexto.append(f"Cuerda: {st.session_state.chord_input_float}")
-        contexto.append(f"Sagitta: {st.session_state.sagitta_input_float}")
-        contexto.append(f"Longitud tubo: {st.session_state.tube_length_input_float}")
-        contexto.append(f"Cantidad de arcos: {st.session_state.cantidad_arcos_widget}")
+        contexto.append(f"Unidad seleccionada: {st.session_state.get('selected_unit_name', 'N/A')}")
+        contexto.append(f"Cuerda (c): {st.session_state.get('chord_input_float', 'N/A')}")
+        contexto.append(f"Sagitta (s): {st.session_state.get('sagitta_input_float', 'N/A')}")
+        contexto.append(f"Longitud de tubo (L_tubo): {st.session_state.get('tube_length_input_float', 'N/A')}")
+        contexto.append(f"Cantidad de arcos: {st.session_state.get('cantidad_arcos_widget', 'N/A')}")
         if 'radius_display' in st.session_state:
             contexto.append(f"Radio calculado: {st.session_state.radius_display}")
         if 'arc_length_display_one_arc' in st.session_state:
@@ -237,6 +238,21 @@ def main():
             for campo, key, tipo in [
                 ("cuerda", "chord_input_float", float),
                 ("sagitta", "sagitta_input_float", float),
+                ("longitud de tubo", "tube_length_input_float", float),
+                ("cantidad de arcos", "cantidad_arcos_widget", int)
+            ]:
+                patron = rf"cambiar {campo} a ([0-9]+(\.[0-9]+)?)"
+                m = re.search(patron, chat_input, re.IGNORECASE)
+                if m:
+                    nuevo_valor = tipo(m.group(1))
+                    st.session_state[key] = nuevo_valor
+                    cambios.append(f"{campo} cambiado a {nuevo_valor}")
+            st.session_state.chat_history.append({"user": chat_input, "ai": respuesta})
+            st.markdown(f"<div style='background:#23272f;color:#f5f5fa;padding:0.5em 1em;border-radius:8px;margin-bottom:0.5em;'><b>Asistente:</b> {respuesta}</div>", unsafe_allow_html=True)
+            if cambios:
+                st.success("; ".join(cambios))
+        else:
+            st.error(f"Error IA: {ai_response['error']}")
                 ("longitud del tubo", "tube_length_input_float", float),
                 ("cantidad de arcos", "cantidad_arcos_widget", int)
             ]:
@@ -258,7 +274,7 @@ def main():
 
     # Mostrar historial de chat
     for h in st.session_state.chat_history[-8:]:
-        st.markdown(f"<div style='background:#f5f5fa;padding:0.5em 1em;border-radius:8px;margin-bottom:0.5em;'><b>Usuario:</b> {h['user']}<br><b>Asistente:</b> {h['ai']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='background:#23272f;color:#f5f5fa;padding:0.5em 1em;border-radius:8px;margin-bottom:0.5em;'><b>Usuario:</b> {h['user']}<br><b>Asistente:</b> {h['ai']}</div>", unsafe_allow_html=True)
     # app_config ya inicializado arriba
 
     st.title("🔢 Calculadora de Precisión para Arcos y Tubos")
@@ -494,10 +510,11 @@ def main():
                     
                     # Guardar datos de tubos si fueron calculados
                     try:
-                        st.session_state.tube_usable_length = tube_usable_length
-                        st.session_state.num_tubes_output_str = num_tubes_output_str
-                        if 'total_arc_length_for_tubes_display' in locals():
-                            st.session_state.total_arc_length_for_tubes_display = total_arc_length_for_tubes_display
+                        if tube_usable_length is not None:
+                            st.session_state.tube_usable_length = tube_usable_length
+                            st.session_state.num_tubes_output_str = num_tubes_output_str
+                            if 'total_arc_length_for_tubes_display' in locals():
+                                st.session_state.total_arc_length_for_tubes_display = total_arc_length_for_tubes_display
                     except NameError:
                         pass
                         if 'full_tubes' in locals():

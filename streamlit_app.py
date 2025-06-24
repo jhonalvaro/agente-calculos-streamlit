@@ -334,180 +334,187 @@ def main():
     st.session_state.sagitta_input_float = st.number_input(f"Sagitta/Flecha (s) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.sagitta_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="sagitta_input_widget", help=f"Altura máxima del arco.")
     st.session_state.tube_length_input_float = st.number_input(f"Longitud Tubo (L_tubo) en {selected_unit_name_for_display}", min_value=0.0, max_value=1e12, value=st.session_state.tube_length_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="tube_length_input_widget", help=f"Longitud del tubo a rolar (opcional).")
 
-    if st.button("🚀 Calcular", type="primary", use_container_width=True):
-        current_chord_f_selected_unit = st.session_state.chord_input_float
-        current_sagitta_f_selected_unit = st.session_state.sagitta_input_float
-        current_tube_len_f_selected_unit = st.session_state.tube_length_input_float
-        cantidad_arcos_val = st.session_state.cantidad_arcos_widget # MODIFIED KEY
+    # Call the calculation and display function on every rerun
+    perform_calculations_and_display()
 
-        chord_base_f = current_chord_f_selected_unit * float(factor_to_base_unit)
-        sagitta_base_f = current_sagitta_f_selected_unit * float(factor_to_base_unit)
+def perform_calculations_and_display():
+    # Access variables from the outer scope (main function)
+    # These include factor_to_base_unit, display_prec_cfg, selected_unit_name_for_display, app_config
+    # Ensure these are available and correctly scoped if this function were to be moved further out.
 
-        if current_chord_f_selected_unit <= 1e-9 or current_sagitta_f_selected_unit <= 1e-9: st.error("❌ Cuerda y Sagitta deben ser > 0.")
-        elif Decimal(str(current_sagitta_f_selected_unit)) >= Decimal(str(current_chord_f_selected_unit)) / Decimal('2'):
-            st.error(f"❌ Sagitta (s={current_sagitta_f_selected_unit:.{display_prec_cfg}f}) debe ser < mitad de Cuerda (c/2 = {current_chord_f_selected_unit/2:.{display_prec_cfg}f}).")
-        elif current_tube_len_f_selected_unit < 0.0 and abs(current_tube_len_f_selected_unit) > 1e-9 : st.error("❌ Longitud del Tubo no puede ser negativa (0 si no se usa).")
-        elif cantidad_arcos_val < 1: st.error("❌ Cantidad de Arcos debe ser al menos 1.")
-        else:
-            # ... (rest of the calculation and display logic remains the same as previous correct version) ...
-            with st.spinner("🧠 Calculando..."):
-                start_time = time.time()
-                calc_results = calculate_radius_all_methods(chord_base_f, sagitta_base_f, app_config['precision'])
-                computation_time = time.time() - start_time
+    current_chord_f_selected_unit = st.session_state.chord_input_float
+    current_sagitta_f_selected_unit = st.session_state.sagitta_input_float
+    current_tube_len_f_selected_unit = st.session_state.tube_length_input_float
+    cantidad_arcos_val = st.session_state.cantidad_arcos_widget # MODIFIED KEY
 
-                if calc_results.get("success"):
-                    radius_base_dec = Decimal(calc_results['radius_final_dec_str'])
-                    arc_length_base_str = calc_results.get('arc_length_dec_str', "N/A")
-                    central_angle_base_str = calc_results.get('central_angle_deg_str', "N/A")
-                    arc_calc_err = calc_results.get('arc_calculation_error')
+    chord_base_f = current_chord_f_selected_unit * float(factor_to_base_unit)
+    sagitta_base_f = current_sagitta_f_selected_unit * float(factor_to_base_unit)
 
-                    radius_display = radius_base_dec / factor_to_base_unit
-                    arc_length_display_one_arc, central_angle_display = None, None
-                    if arc_length_base_str != "N/A" and not arc_calc_err:
-                        try: arc_length_display_one_arc = Decimal(arc_length_base_str) / factor_to_base_unit
-                        except: arc_calc_err = arc_calc_err or "Error al convertir long. arco para display"
-                    if central_angle_base_str != "N/A" and not arc_calc_err:
-                        try: central_angle_display = Decimal(central_angle_base_str)
-                        except: arc_calc_err = arc_calc_err or "Error al convertir ángulo para display"
+    if current_chord_f_selected_unit <= 1e-9 or current_sagitta_f_selected_unit <= 1e-9: st.error("❌ Cuerda y Sagitta deben ser > 0.")
+    elif Decimal(str(current_sagitta_f_selected_unit)) >= Decimal(str(current_chord_f_selected_unit)) / Decimal('2'):
+        st.error(f"❌ Sagitta (s={current_sagitta_f_selected_unit:.{display_prec_cfg}f}) debe ser < mitad de Cuerda (c/2 = {current_chord_f_selected_unit/2:.{display_prec_cfg}f}).")
+    elif current_tube_len_f_selected_unit < 0.0 and abs(current_tube_len_f_selected_unit) > 1e-9 : st.error("❌ Longitud del Tubo no puede ser negativa (0 si no se usa).")
+    elif cantidad_arcos_val < 1: st.error("❌ Cantidad de Arcos debe ser al menos 1.")
+    else:
+        # ... (rest of the calculation and display logic remains the same as previous correct version) ...
+        with st.spinner("🧠 Calculando..."):
+            start_time = time.time()
+            calc_results = calculate_radius_all_methods(chord_base_f, sagitta_base_f, app_config['precision'])
+            computation_time = time.time() - start_time
 
-                    # Guardar todos los resultados calculados en session_state para persistencia
-                    st.session_state.radius_display = radius_display
-                    st.session_state.arc_length_display_one_arc = arc_length_display_one_arc
-                    st.session_state.central_angle_display = central_angle_display
-                    st.session_state.arc_calc_err = arc_calc_err
-                    st.session_state.confidence_dec = Decimal(calc_results['confidence_dec_str'])
-                    st.session_state.methods_ui_data = [{"Método": k, f"Resultado (R)": f"{(Decimal(v)/factor_to_base_unit):.{display_prec_cfg}f}" if not v.startswith("Error") else v, "Estado": "✅" if not v.startswith("Error") else "❌"} for k,v in calc_results['methods_dec_str'].items()]
-                    st.session_state.computation_time = computation_time
-                    st.session_state.sag_corr_base_dec = Decimal(calc_results['sagitta_corrected_dec_str'])
-                    st.session_state.sag_incorr_base_dec = Decimal(calc_results['sagitta_incorrect_dec_str'])
-                    st.session_state.err_perc_dec = Decimal(calc_results['error_percentage_dec_str'])
+            if calc_results.get("success"):
+                radius_base_dec = Decimal(calc_results['radius_final_dec_str'])
+                arc_length_base_str = calc_results.get('arc_length_dec_str', "N/A")
+                central_angle_base_str = calc_results.get('central_angle_deg_str', "N/A")
+                arc_calc_err = calc_results.get('arc_calculation_error')
 
-                    st.success(f"✅ **Radio del Arco Principal (R): {radius_display:.{display_prec_cfg}f} {selected_unit_name_for_display}**")
+                radius_display = radius_base_dec / factor_to_base_unit
+                arc_length_display_one_arc, central_angle_display = None, None
+                if arc_length_base_str != "N/A" and not arc_calc_err:
+                    try: arc_length_display_one_arc = Decimal(arc_length_base_str) / factor_to_base_unit
+                    except: arc_calc_err = arc_calc_err or "Error al convertir long. arco para display"
+                if central_angle_base_str != "N/A" and not arc_calc_err:
+                    try: central_angle_display = Decimal(central_angle_base_str)
+                    except: arc_calc_err = arc_calc_err or "Error al convertir ángulo para display"
 
-                    if arc_calc_err: st.warning(f"Info cálculo de arco: {arc_calc_err}")
-                    elif arc_length_display_one_arc is not None and arc_length_display_one_arc > Decimal('1e-7'):
-                        st.subheader("📏 Dimensiones del Arco Principal (por unidad)")
-                        col_L, col_A = st.columns(2)
-                        col_L.metric(f"Longitud de 1 Arco (L_arco)", f"{arc_length_display_one_arc:.{display_prec_cfg}f} {selected_unit_name_for_display}")
-                        if central_angle_display is not None: col_A.metric("Ángulo Central (por arco)", f"{central_angle_display:.{display_prec_cfg}f}°")
+                # Guardar todos los resultados calculados en session_state para persistencia
+                st.session_state.radius_display = radius_display
+                st.session_state.arc_length_display_one_arc = arc_length_display_one_arc
+                st.session_state.central_angle_display = central_angle_display
+                st.session_state.arc_calc_err = arc_calc_err
+                st.session_state.confidence_dec = Decimal(calc_results['confidence_dec_str'])
+                st.session_state.methods_ui_data = [{"Método": k, f"Resultado (R)": f"{(Decimal(v)/factor_to_base_unit):.{display_prec_cfg}f}" if not v.startswith("Error") else v, "Estado": "✅" if not v.startswith("Error") else "❌"} for k,v in calc_results['methods_dec_str'].items()]
+                st.session_state.computation_time = computation_time
+                st.session_state.sag_corr_base_dec = Decimal(calc_results['sagitta_corrected_dec_str'])
+                st.session_state.sag_incorr_base_dec = Decimal(calc_results['sagitta_incorrect_dec_str'])
+                st.session_state.err_perc_dec = Decimal(calc_results['error_percentage_dec_str'])
 
-                    confidence_dec = Decimal(calc_results['confidence_dec_str'])
-                    col_m1,col_m2,col_m3=st.columns(3); col_m1.metric("Confianza (Radio)",f"{confidence_dec:.2%}")
-                    valid_m_cnt=sum(1 for v in calc_results['methods_dec_str'].values() if not v.startswith("Error"))
-                    col_m2.metric("Métodos Válidos",f"{valid_m_cnt}/{len(calc_results['methods_dec_str'])}"); col_m3.metric("Tiempo Cálculo",f"{computation_time*1000:.1f}ms")
+                st.success(f"✅ **Radio del Arco Principal (R): {radius_display:.{display_prec_cfg}f} {selected_unit_name_for_display}**")
 
-                    st.subheader(f"Detalles del Cálculo del Radio (en {selected_unit_name_for_display})")
-                    methods_ui_data = [{"Método": k, f"Resultado (R)": f"{(Decimal(v)/factor_to_base_unit):.{display_prec_cfg}f}" if not v.startswith("Error") else v, "Estado": "✅" if not v.startswith("Error") else "❌"} for k,v in calc_results['methods_dec_str'].items()]
-                    st.table(methods_ui_data)
+                if arc_calc_err: st.warning(f"Info cálculo de arco: {arc_calc_err}")
+                elif arc_length_display_one_arc is not None and arc_length_display_one_arc > Decimal('1e-7'):
+                    st.subheader("📏 Dimensiones del Arco Principal (por unidad)")
+                    col_L, col_A = st.columns(2)
+                    col_L.metric(f"Longitud de 1 Arco (L_arco)", f"{arc_length_display_one_arc:.{display_prec_cfg}f} {selected_unit_name_for_display}")
+                    if central_angle_display is not None: col_A.metric("Ángulo Central (por arco)", f"{central_angle_display:.{display_prec_cfg}f}°")
 
-                    sag_corr_base_dec = Decimal(calc_results['sagitta_corrected_dec_str']); sag_incorr_base_dec = Decimal(calc_results['sagitta_incorrect_dec_str'])
-                    err_perc_dec = Decimal(calc_results['error_percentage_dec_str'])
-                    sag_corr_display = sag_corr_base_dec / factor_to_base_unit
-                    sag_incorr_display = sag_incorr_base_dec / factor_to_base_unit if sag_incorr_base_dec.is_finite() else Decimal('inf')
-                    st.subheader(f"Verificación de Sagitta (Arco Principal)")
-                    col_s1,col_s2=st.columns(2); col_s1.metric(f"s con L²/(8R)",f"{sag_corr_display:.{display_prec_cfg}f} {selected_unit_name_for_display}"); col_s2.metric(f"s con L²/(2R)",f"{sag_incorr_display:.{display_prec_cfg}f} {selected_unit_name_for_display}")
-                    if err_perc_dec.is_finite(): st.info(f"Error relativo (sagitta): {err_perc_dec:.1f}%")
-                    else: st.info("Error relativo (sagitta): Indefinido.")
+                confidence_dec = Decimal(calc_results['confidence_dec_str'])
+                col_m1,col_m2,col_m3=st.columns(3); col_m1.metric("Confianza (Radio)",f"{confidence_dec:.2%}")
+                valid_m_cnt=sum(1 for v in calc_results['methods_dec_str'].values() if not v.startswith("Error"))
+                col_m2.metric("Métodos Válidos",f"{valid_m_cnt}/{len(calc_results['methods_dec_str'])}"); col_m3.metric("Tiempo Cálculo",f"{computation_time*1000:.1f}ms")
 
-                    st.subheader("📊 Visualización del Arco Principal")
-                    main_arc_plot_fig = create_single_arc_visualization(Decimal(str(current_chord_f_selected_unit)), Decimal(str(current_sagitta_f_selected_unit)), radius_display, plot_title_prefix="Arco Principal", display_precision_cfg=display_prec_cfg, unit_name=selected_unit_name_for_display)
-                    if main_arc_plot_fig and PLOTLY_AVAILABLE: st.plotly_chart(main_arc_plot_fig, use_container_width=True)
+                st.subheader(f"Detalles del Cálculo del Radio (en {selected_unit_name_for_display})")
+                methods_ui_data = [{"Método": k, f"Resultado (R)": f"{(Decimal(v)/factor_to_base_unit):.{display_prec_cfg}f}" if not v.startswith("Error") else v, "Estado": "✅" if not v.startswith("Error") else "❌"} for k,v in calc_results['methods_dec_str'].items()]
+                st.table(methods_ui_data)
 
-                    flecha_tubo_calc_display = None
-                    num_tubes_output_str = "N/A"
+                sag_corr_base_dec = Decimal(calc_results['sagitta_corrected_dec_str']); sag_incorr_base_dec = Decimal(calc_results['sagitta_incorrect_dec_str'])
+                err_perc_dec = Decimal(calc_results['error_percentage_dec_str'])
+                sag_corr_display = sag_corr_base_dec / factor_to_base_unit
+                sag_incorr_display = sag_incorr_base_dec / factor_to_base_unit if sag_incorr_base_dec.is_finite() else Decimal('inf')
+                st.subheader(f"Verificación de Sagitta (Arco Principal)")
+                col_s1,col_s2=st.columns(2); col_s1.metric(f"s con L²/(8R)",f"{sag_corr_display:.{display_prec_cfg}f} {selected_unit_name_for_display}"); col_s2.metric(f"s con L²/(2R)",f"{sag_incorr_display:.{display_prec_cfg}f} {selected_unit_name_for_display}")
+                if err_perc_dec.is_finite(): st.info(f"Error relativo (sagitta): {err_perc_dec:.1f}%")
+                else: st.info("Error relativo (sagitta): Indefinido.")
 
-                    if current_tube_len_f_selected_unit > 1e-9:
-                        st.subheader("🏹 Cálculo de Flecha para Tubo")
-                        ui_calc = OptimizedCalculator(app_config['precision'])
-                        if radius_base_dec.is_finite() and radius_base_dec > Decimal('0'):
-                            tube_len_base_dec = Decimal(str(current_tube_len_f_selected_unit)) * factor_to_base_unit
-                            flecha_tubo_base_dec = ui_calc.calculate_sagitta_corrected(tube_len_base_dec, radius_base_dec)
-                            flecha_tubo_calc_display = flecha_tubo_base_dec / factor_to_base_unit
-                            col_t1,col_t2=st.columns(2); col_t1.metric(f"Longitud Tubo ({selected_unit_name_for_display})",f"{current_tube_len_f_selected_unit:.{app_config['display_precision_metrics']}f}"); col_t2.metric(f"Flecha Tubo Calculada ({selected_unit_name_for_display})",f"{flecha_tubo_calc_display:.{display_prec_cfg}f}")
-                            st.caption(f"Valores en {selected_unit_name_for_display}")
+                st.subheader("📊 Visualización del Arco Principal")
+                main_arc_plot_fig = create_single_arc_visualization(Decimal(str(current_chord_f_selected_unit)), Decimal(str(current_sagitta_f_selected_unit)), radius_display, plot_title_prefix="Arco Principal", display_precision_cfg=display_prec_cfg, unit_name=selected_unit_name_for_display)
+                if main_arc_plot_fig and PLOTLY_AVAILABLE: st.plotly_chart(main_arc_plot_fig, use_container_width=True)
 
-                            st.subheader("📊 Visualización del Tubo Rolado")
-                            tube_arc_plot_fig = create_single_arc_visualization(Decimal(str(current_tube_len_f_selected_unit)), flecha_tubo_calc_display, radius_display, plot_title_prefix="Tubo Rolado", display_precision_cfg=display_prec_cfg, unit_name=selected_unit_name_for_display)
-                            if tube_arc_plot_fig and PLOTLY_AVAILABLE: st.plotly_chart(tube_arc_plot_fig, use_container_width=True)
+                flecha_tubo_calc_display = None
+                num_tubes_output_str = "N/A"
 
-                            if arc_length_display_one_arc is not None and arc_length_display_one_arc > Decimal('1e-7') and not arc_calc_err:
-                                total_arc_length_for_tubes_display = arc_length_display_one_arc * cantidad_arcos_val
-                                tube_len_selected_unit_dec = Decimal(str(current_tube_len_f_selected_unit))
-                                if tube_len_selected_unit_dec > Decimal('1e-9'):
-                                    num_tubes_precise = total_arc_length_for_tubes_display / tube_len_selected_unit_dec
-                                    full_tubes = math.floor(num_tubes_precise)
-                                    remainder_fraction = num_tubes_precise - Decimal(str(full_tubes))
-                                    remainder_length_display = remainder_fraction * tube_len_selected_unit_dec
-                                    num_tubes_output_str = f"{full_tubes} entero(s) y un segmento de {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display}"
-                                else:
-                                    num_tubes_output_str = "Longitud de tubo inválida para cálculo de ajuste."
-                                    full_tubes = 0; remainder_length_display = Decimal('0')
+                if current_tube_len_f_selected_unit > 1e-9:
+                    st.subheader("🏹 Cálculo de Flecha para Tubo")
+                    ui_calc = OptimizedCalculator(app_config['precision'])
+                    if radius_base_dec.is_finite() and radius_base_dec > Decimal('0'):
+                        tube_len_base_dec = Decimal(str(current_tube_len_f_selected_unit)) * factor_to_base_unit
+                        flecha_tubo_base_dec = ui_calc.calculate_sagitta_corrected(tube_len_base_dec, radius_base_dec)
+                        flecha_tubo_calc_display = flecha_tubo_base_dec / factor_to_base_unit
+                        col_t1,col_t2=st.columns(2); col_t1.metric(f"Longitud Tubo ({selected_unit_name_for_display})",f"{current_tube_len_f_selected_unit:.{app_config['display_precision_metrics']}f}"); col_t2.metric(f"Flecha Tubo Calculada ({selected_unit_name_for_display})",f"{flecha_tubo_calc_display:.{display_prec_cfg}f}")
+                        st.caption(f"Valores en {selected_unit_name_for_display}")
 
-                                st.subheader("🧩 Ajuste de Tubos en el Arco")
-                                st.write(f"Cantidad de Arcos Considerada: **{cantidad_arcos_val}**")
-                                st.write(f"Longitud Total de Arco a Cubrir: **{total_arc_length_for_tubes_display:.{display_prec_cfg}f} {selected_unit_name_for_display}**")
-                                st.write(f"Longitud de cada Tubo: **{current_tube_len_f_selected_unit:.{app_config['display_precision_metrics']}f} {selected_unit_name_for_display}**")
-                                if "entero(s)" in num_tubes_output_str :
-                                     st.metric(label="Resultado del Ajuste", value=f"{full_tubes} tubos + {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display}")
-                                     st.caption(f"El segmento adicional mide {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display} (equivale a {remainder_fraction:.{display_prec_cfg}f} del largo de un tubo).")
-                                else: st.warning(num_tubes_output_str)
-                            elif arc_calc_err: st.caption(f"Ajuste de tubos no calculado (error en L_arco): {arc_calc_err}")
-                        else: st.warning("No se calcula flecha de tubo: radio del arco principal no válido.")
+                        st.subheader("📊 Visualización del Tubo Rolado")
+                        tube_arc_plot_fig = create_single_arc_visualization(Decimal(str(current_tube_len_f_selected_unit)), flecha_tubo_calc_display, radius_display, plot_title_prefix="Tubo Rolado", display_precision_cfg=display_prec_cfg, unit_name=selected_unit_name_for_display)
+                        if tube_arc_plot_fig and PLOTLY_AVAILABLE: st.plotly_chart(tube_arc_plot_fig, use_container_width=True)
 
-                    if app_config['gemini_api_key'] and REQUESTS_AVAILABLE:
-                        with st.expander("🤖 Análisis con IA (Opcional)", expanded=False):
-                            with st.spinner("🧠 Consultando IA..."):
-                                s_tubo_str_ai = f"{flecha_tubo_calc_display:.{display_prec_cfg}f} {selected_unit_name_for_display}" if flecha_tubo_calc_display is not None else "N/A"
-                                arc_len_str_ai = f"{arc_length_display_one_arc:.{display_prec_cfg}f} {selected_unit_name_for_display}" if arc_length_display_one_arc is not None and arc_length_display_one_arc > Decimal('1e-7') and not arc_calc_err else "N/A"
-                                central_angle_str_ai = f"{central_angle_display:.{display_prec_cfg}f}°" if central_angle_display is not None and not arc_calc_err else "N/A"
-                                total_arc_len_for_ai = f"{(arc_length_display_one_arc * cantidad_arcos_val):.{display_prec_cfg}f} {selected_unit_name_for_display}" if arc_length_display_one_arc is not None and arc_length_display_one_arc > Decimal('1e-7') and cantidad_arcos_val >=1 and not arc_calc_err else "N/A"
+                        if arc_length_display_one_arc is not None and arc_length_display_one_arc > Decimal('1e-7') and not arc_calc_err:
+                            total_arc_length_for_tubes_display = arc_length_display_one_arc * cantidad_arcos_val
+                            tube_len_selected_unit_dec = Decimal(str(current_tube_len_f_selected_unit))
+                            if tube_len_selected_unit_dec > Decimal('1e-9'):
+                                num_tubes_precise = total_arc_length_for_tubes_display / tube_len_selected_unit_dec
+                                full_tubes = math.floor(num_tubes_precise)
+                                remainder_fraction = num_tubes_precise - Decimal(str(full_tubes))
+                                remainder_length_display = remainder_fraction * tube_len_selected_unit_dec
+                                num_tubes_output_str = f"{full_tubes} entero(s) y un segmento de {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display}"
+                            else:
+                                num_tubes_output_str = "Longitud de tubo inválida para cálculo de ajuste."
+                                full_tubes = 0; remainder_length_display = Decimal('0')
 
-                                prompt_lines = []
-                                prompt_lines.append(f"Análisis de cálculo de arco (unidades de entrada/salida: {selected_unit_name_for_display}):")
-                                prompt_lines.append(f"- Cuerda (c): {current_chord_f_selected_unit:.{app_config['display_precision_metrics']}f}, Sagitta (s): {current_sagitta_f_selected_unit:.{app_config['display_precision_metrics']}f}, Radio calculado (R): {radius_display:.{display_prec_cfg}f}.")
-                                prompt_lines.append(f"- Para 1 arco: Longitud (L_arco): {arc_len_str_ai}, Ángulo Central: {central_angle_str_ai}.")
-                                prompt_lines.append(f"- Cantidad de Arcos: {cantidad_arcos_val}, L_arco Total: {total_arc_len_for_ai}.")
-                                prompt_lines.append(f"¿Es R geométricamente coherente con c y s? ¿Son L_arco y Ángulo coherentes?")
-                                prompt_lines.append(f"Si L_tubo = {current_tube_len_f_selected_unit:.{app_config['display_precision_metrics']}f} (>0), y s_tubo = {s_tubo_str_ai}, ¿es s_tubo coherente?")
-                                prompt_lines.append(f"Para L_arco Total y L_tubo, ¿cuántos tubos se necesitan ({num_tubes_output_str})?")
-                                prompt_lines.append(f"Explicación concisa.")
-                                ai_prompt = "\n".join(prompt_lines)
+                            st.subheader("🧩 Ajuste de Tubos en el Arco")
+                            st.write(f"Cantidad de Arcos Considerada: **{cantidad_arcos_val}**")
+                            st.write(f"Longitud Total de Arco a Cubrir: **{total_arc_length_for_tubes_display:.{display_prec_cfg}f} {selected_unit_name_for_display}**")
+                            st.write(f"Longitud de cada Tubo: **{current_tube_len_f_selected_unit:.{app_config['display_precision_metrics']}f} {selected_unit_name_for_display}**")
+                            if "entero(s)" in num_tubes_output_str :
+                                 st.metric(label="Resultado del Ajuste", value=f"{full_tubes} tubos + {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display}")
+                                 st.caption(f"El segmento adicional mide {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display} (equivale a {remainder_fraction:.{display_prec_cfg}f} del largo de un tubo).")
+                            else: st.warning(num_tubes_output_str)
+                        elif arc_calc_err: st.caption(f"Ajuste de tubos no calculado (error en L_arco): {arc_calc_err}")
+                    else: st.warning("No se calcula flecha de tubo: radio del arco principal no válido.")
 
-                                ai_response = call_gemini_api(ai_prompt, app_config['gemini_api_key'])
-                                if ai_response["success"]: st.info("Respuesta de IA:"); st.markdown(ai_response["response"])
-                                else: st.error(f"Error IA: {ai_response['error']}")
-                    elif not app_config['gemini_api_key'] and REQUESTS_AVAILABLE:
-                         with st.expander("🤖 Análisis con IA (Opcional)", expanded=False): st.warning("API Key de Gemini no configurada.")
-                    
-                    # Guardar todos los resultados calculados en session_state para persistencia
-                    st.session_state.radius_display = radius_display
-                    st.session_state.arc_length_display_one_arc = arc_length_display_one_arc
-                    st.session_state.central_angle_display = central_angle_display
-                    st.session_state.arc_calc_err = arc_calc_err
-                    st.session_state.confidence_dec = confidence_dec
-                    st.session_state.methods_ui_data = methods_ui_data
-                    st.session_state.computation_time = computation_time
-                    st.session_state.sag_corr_display = sag_corr_display
-                    st.session_state.sag_incorr_display = sag_incorr_display
-                    st.session_state.err_perc_dec = err_perc_dec
-                    st.session_state.flecha_tubo_calc_display = flecha_tubo_calc_display
-                    
-                    # Guardar datos de tubos si fueron calculados
-                    try:
-                        if tube_usable_length is not None:
-                            st.session_state.tube_usable_length = tube_usable_length
-                            st.session_state.num_tubes_output_str = num_tubes_output_str
-                            if 'total_arc_length_for_tubes_display' in locals():
-                                st.session_state.total_arc_length_for_tubes_display = total_arc_length_for_tubes_display
-                    except NameError:
-                        pass
-                        if 'full_tubes' in locals():
-                            st.session_state.full_tubes = full_tubes
-                        if 'remainder_length_display' in locals():
-                            st.session_state.remainder_length_display = remainder_length_display
+                if app_config['gemini_api_key'] and REQUESTS_AVAILABLE:
+                    with st.expander("🤖 Análisis con IA (Opcional)", expanded=False):
+                        with st.spinner("🧠 Consultando IA..."):
+                            s_tubo_str_ai = f"{flecha_tubo_calc_display:.{display_prec_cfg}f} {selected_unit_name_for_display}" if flecha_tubo_calc_display is not None else "N/A"
+                            arc_len_str_ai = f"{arc_length_display_one_arc:.{display_prec_cfg}f} {selected_unit_name_for_display}" if arc_length_display_one_arc is not None and arc_length_display_one_arc > Decimal('1e-7') and not arc_calc_err else "N/A"
+                            central_angle_str_ai = f"{central_angle_display:.{display_prec_cfg}f}°" if central_angle_display is not None and not arc_calc_err else "N/A"
+                            total_arc_len_for_ai = f"{(arc_length_display_one_arc * cantidad_arcos_val):.{display_prec_cfg}f} {selected_unit_name_for_display}" if arc_length_display_one_arc is not None and arc_length_display_one_arc > Decimal('1e-7') and cantidad_arcos_val >=1 and not arc_calc_err else "N/A"
+
+                            prompt_lines = []
+                            prompt_lines.append(f"Análisis de cálculo de arco (unidades de entrada/salida: {selected_unit_name_for_display}):")
+                            prompt_lines.append(f"- Cuerda (c): {current_chord_f_selected_unit:.{app_config['display_precision_metrics']}f}, Sagitta (s): {current_sagitta_f_selected_unit:.{app_config['display_precision_metrics']}f}, Radio calculado (R): {radius_display:.{display_prec_cfg}f}.")
+                            prompt_lines.append(f"- Para 1 arco: Longitud (L_arco): {arc_len_str_ai}, Ángulo Central: {central_angle_str_ai}.")
+                            prompt_lines.append(f"- Cantidad de Arcos: {cantidad_arcos_val}, L_arco Total: {total_arc_len_for_ai}.")
+                            prompt_lines.append(f"¿Es R geométricamente coherente con c y s? ¿Son L_arco y Ángulo coherentes?")
+                            prompt_lines.append(f"Si L_tubo = {current_tube_len_f_selected_unit:.{app_config['display_precision_metrics']}f} (>0), y s_tubo = {s_tubo_str_ai}, ¿es s_tubo coherente?")
+                            prompt_lines.append(f"Para L_arco Total y L_tubo, ¿cuántos tubos se necesitan ({num_tubes_output_str})?")
+                            prompt_lines.append(f"Explicación concisa.")
+                            ai_prompt = "\n".join(prompt_lines)
+
+                            ai_response = call_gemini_api(ai_prompt, app_config['gemini_api_key'])
+                            if ai_response["success"]: st.info("Respuesta de IA:"); st.markdown(ai_response["response"])
+                            else: st.error(f"Error IA: {ai_response['error']}")
+                elif not app_config['gemini_api_key'] and REQUESTS_AVAILABLE:
+                     with st.expander("🤖 Análisis con IA (Opcional)", expanded=False): st.warning("API Key de Gemini no configurada.")
+
+                # Guardar todos los resultados calculados en session_state para persistencia
+                st.session_state.radius_display = radius_display
+                st.session_state.arc_length_display_one_arc = arc_length_display_one_arc
+                st.session_state.central_angle_display = central_angle_display
+                st.session_state.arc_calc_err = arc_calc_err
+                st.session_state.confidence_dec = confidence_dec
+                st.session_state.methods_ui_data = methods_ui_data
+                st.session_state.computation_time = computation_time
+                st.session_state.sag_corr_display = sag_corr_display
+                st.session_state.sag_incorr_display = sag_incorr_display
+                st.session_state.err_perc_dec = err_perc_dec
+                st.session_state.flecha_tubo_calc_display = flecha_tubo_calc_display
                 
-                else:
-                    st.error(f"❌ {calc_results.get('error', 'Error en cálculo principal.')}")
+                # Guardar datos de tubos si fueron calculados
+                try:
+                    if tube_usable_length is not None: # type: ignore
+                        st.session_state.tube_usable_length = tube_usable_length # type: ignore
+                        st.session_state.num_tubes_output_str = num_tubes_output_str
+                        if 'total_arc_length_for_tubes_display' in locals():
+                            st.session_state.total_arc_length_for_tubes_display = total_arc_length_for_tubes_display
+                except NameError:
+                    pass
+                    if 'full_tubes' in locals():
+                        st.session_state.full_tubes = full_tubes
+                    if 'remainder_length_display' in locals():
+                        st.session_state.remainder_length_display = remainder_length_display
+
+            else:
+                st.error(f"❌ {calc_results.get('error', 'Error en cálculo principal.')}")
 
     st.subheader("📋 Ejemplos")
     examples_float_data = [{"name": "Arco Estándar", "chord": 100.0, "sagitta": 10.0, "tube_length": 50.0},{"name": "Puente Pequeño", "chord": 50.0, "sagitta": 5.0},{"name": "Lente Óptica", "chord": 10.0, "sagitta": 0.5, "tube_length": 8.0},{"name": "Curva Suave", "chord": 1000.0, "sagitta": 25.0, "tube_length": 200.0}]

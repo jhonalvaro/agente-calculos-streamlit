@@ -252,22 +252,6 @@ def main():
             if cambios:
                 st.success("; ".join(cambios))
         else:
-            st.error(f"Error IA: {ai_response['error']}")
-                ("longitud del tubo", "tube_length_input_float", float),
-                ("cantidad de arcos", "cantidad_arcos_widget", int)
-            ]:
-                patron = rf"cambiar {campo} a ([0-9]+\.?[0-9]*)"
-                m = re.search(patron, chat_input, re.IGNORECASE)
-                if m:
-                    nuevo_valor = tipo(m.group(1))
-                    st.session_state[key] = nuevo_valor
-                    cambios.append(f"{campo} cambiado a {nuevo_valor}")
-            if cambios:
-                respuesta += "\n\n" + "\n".join([f"✅ {c}" for c in cambios])
-                st.rerun()
-            st.session_state.chat_history.append({"user": chat_input, "ai": respuesta})
-            st.session_state.chat_input = ""
-        else:
             st.session_state.chat_history.append({"user": chat_input, "ai": f"❌ {ai_response['error']}"})
             st.session_state.chat_input = chat_input
         st.rerun()

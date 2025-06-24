@@ -230,47 +230,63 @@ def main():
         # Llamar a Gemini Flash 2
         ai_response = call_gemini_api(prompt, app_config['gemini_api_key'])
         if ai_response["success"]:
-            respuesta = ai_response["response"]
-            # Detectar si el usuario quiere cambiar algún valor
-            # (Ejemplo simple: "cambiar cuerda a 50")
-            import re
+            original_ai_respuesta = ai_response["response"]
+
+            import re # Keep re import local to this block as it's specific
             cambios = []
-            for campo, key, tipo in [
+            # Define fields that can be changed via chat
+            campos_modificables = [
                 ("cuerda", "chord_input_float", float),
                 ("sagitta", "sagitta_input_float", float),
                 ("longitud de tubo", "tube_length_input_float", float),
-                ("cantidad de arcos", "cantidad_arcos_widget", int)
-            ]:
-                patron = rf"cambiar {campo} a ([0-9]+(\.[0-9]+)?)"
-                m = re.search(patron, chat_input, re.IGNORECASE)
-                if m:
-                    nuevo_valor = tipo(m.group(1))
-                    st.session_state[key] = nuevo_valor
-                    cambios.append(f"{campo} cambiado a {nuevo_valor}")
-            st.session_state.chat_history.append({"user": chat_input, "ai": respuesta})
-            st.markdown(f"<div style='background:#23272f;color:#f5f5fa;padding:0.5em 1em;border-radius:8px;margin-bottom:0.5em;'><b>Asistente:</b> {respuesta}</div>", unsafe_allow_html=True)
+                ("longitud del tubo", "tube_length_input_float", float), # Alias for tubo
+                ("tubo", "tube_length_input_float", float), # Alias for tubo
+                ("cantidad de arcos", "cantidad_arcos_widget", int),
+                ("arcos", "cantidad_arcos_widget", int) # Alias for arcos
+            ]
+
+            for campo_nombre, session_key, tipo_dato in campos_modificables:
+                # Regex to catch variations of "cambiar X a Y"
+                # Allows for "a", "para", "por", or "=" as separators
+                # Allows for optional space around the separator
+                patron = rf"cambiar {campo_nombre}\s*(?:a|para|por|=)\s*([0-9]+\.?[0-9]*)"
+                match = re.search(patron, chat_input, re.IGNORECASE)
+                if match:
+                    nuevo_valor_str = match.group(1)
+                    try:
+                        nuevo_valor = tipo_dato(nuevo_valor_str)
+                        st.session_state[session_key] = nuevo_valor
+                        cambios.append(f"{campo_nombre.capitalize()} cambiado a {nuevo_valor}")
+                    except ValueError:
+                        # Silently ignore if conversion fails, or add a st.warning if preferred
+                        pass # Or: st.warning(f"No se pudo convertir '{nuevo_valor_str}' para '{campo_nombre}'")
+
+            # Display the original AI response first
+            st.markdown(f"<div style='background:#23272f;color:#f5f5fa;padding:0.5em 1em;border-radius:8px;margin-bottom:0.5em;'><b>Asistente:</b> {original_ai_respuesta}</div>", unsafe_allow_html=True)
+
             if cambios:
-                st.success("; ".join(cambios))
-        else:
-            st.error(f"Error IA: {ai_response['error']}")
-                ("longitud del tubo", "tube_length_input_float", float),
-                ("cantidad de arcos", "cantidad_arcos_widget", int)
-            ]:
-                patron = rf"cambiar {campo} a ([0-9]+\.?[0-9]*)"
-                m = re.search(patron, chat_input, re.IGNORECASE)
-                if m:
-                    nuevo_valor = tipo(m.group(1))
-                    st.session_state[key] = nuevo_valor
-                    cambios.append(f"{campo} cambiado a {nuevo_valor}")
-            if cambios:
-                respuesta += "\n\n" + "\n".join([f"✅ {c}" for c in cambios])
-                st.rerun()
-            st.session_state.chat_history.append({"user": chat_input, "ai": respuesta})
-            st.session_state.chat_input = ""
-        else:
-            st.session_state.chat_history.append({"user": chat_input, "ai": f"❌ {ai_response['error']}"})
-            st.session_state.chat_input = chat_input
-        st.rerun()
+                # Announce the changes made
+                for cambio_msg in cambios:
+                    st.success(f"✅ {cambio_msg}")
+
+                # Update chat history with AI response and changes
+                respuesta_para_historia = original_ai_respuesta + "\n\n" + "\n".join([f"✅ {c}" for c in cambios])
+                st.session_state.chat_history.append({"user": chat_input, "ai": respuesta_para_historia})
+                st.session_state.chat_input = "" # Clear input box
+                st.rerun() # Rerun to apply changes and update UI reflecting new state
+            else:
+                # No changes detected, just add original AI response to history
+                st.session_state.chat_history.append({"user": chat_input, "ai": original_ai_respuesta})
+                st.session_state.chat_input = "" # Clear input box
+                st.rerun() # Rerun to clear input and update history display
+
+        else: # ai_response["success"] is False
+            error_msg = ai_response.get("error", "Error desconocido de API.")
+            st.error(f"Error IA: {error_msg}")
+            st.session_state.chat_history.append({"user": chat_input, "ai": f"❌ Error IA: {error_msg}"})
+            # Do NOT clear st.session_state.chat_input here, so user can see their original query.
+            # Do NOT st.rerun() here, so user sees the error message with their input.
+            # The history will show the error, and next interaction will proceed normally.
 
     # Mostrar historial de chat
     for h in st.session_state.chat_history[-8:]:
@@ -365,6 +381,7 @@ def main():
         elif current_tube_len_f_selected_unit < 0.0 and abs(current_tube_len_f_selected_unit) > 1e-9 : st.error("❌ Longitud del Tubo no puede ser negativa (0 si no se usa).")
         elif cantidad_arcos_val < 1: st.error("❌ Cantidad de Arcos debe ser al menos 1.")
         else:
+            tube_usable_length = None # Initialize here
             # ... (rest of the calculation and display logic remains the same as previous correct version) ...
             with st.spinner("🧠 Calculando..."):
                 start_time = time.time()
@@ -431,6 +448,11 @@ def main():
 
                     flecha_tubo_calc_display = None
                     num_tubes_output_str = "N/A"
+                    # Initialize variables related to tube fitting to ensure they exist for session state
+                    total_arc_length_for_tubes_display = None
+                    full_tubes = 0
+                    remainder_length_display = Decimal('0.0')
+                    remainder_fraction = Decimal('0.0') # Also used in calculations
 
                     if current_tube_len_f_selected_unit > 1e-9:
                         st.subheader("🏹 Cálculo de Flecha para Tubo")
@@ -509,18 +531,13 @@ def main():
                     st.session_state.flecha_tubo_calc_display = flecha_tubo_calc_display
                     
                     # Guardar datos de tubos si fueron calculados
-                    try:
-                        if tube_usable_length is not None:
-                            st.session_state.tube_usable_length = tube_usable_length
-                            st.session_state.num_tubes_output_str = num_tubes_output_str
-                            if 'total_arc_length_for_tubes_display' in locals():
-                                st.session_state.total_arc_length_for_tubes_display = total_arc_length_for_tubes_display
-                    except NameError:
-                        pass
-                        if 'full_tubes' in locals():
-                            st.session_state.full_tubes = full_tubes
-                        if 'remainder_length_display' in locals():
-                            st.session_state.remainder_length_display = remainder_length_display
+                    # These variables are initialized earlier in this scope (e.g., to None, 0, or Decimal('0.0'))
+                    # if they are not explicitly calculated within the tube logic.
+                    st.session_state.tube_usable_length = tube_usable_length
+                    st.session_state.num_tubes_output_str = num_tubes_output_str
+                    st.session_state.total_arc_length_for_tubes_display = total_arc_length_for_tubes_display
+                    st.session_state.full_tubes = full_tubes
+                    st.session_state.remainder_length_display = remainder_length_display
                 
                 else:
                     st.error(f"❌ {calc_results.get('error', 'Error en cálculo principal.')}")

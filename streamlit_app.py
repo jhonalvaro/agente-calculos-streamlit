@@ -338,9 +338,10 @@ def main():
     perform_calculations_and_display()
 
 def perform_calculations_and_display():
-    # Access variables from the outer scope (main function)
-    # These include factor_to_base_unit, display_prec_cfg, selected_unit_name_for_display, app_config
-    # Ensure these are available and correctly scoped if this function were to be moved further out.
+    # Acceso a variables desde el estado de sesión y definición local de factor_to_base_unit
+    selected_unit_name_for_display = st.session_state.selected_unit_name
+    factor_to_base_unit = UNITS_TO_METERS[selected_unit_name_for_display]
+    display_prec_cfg = app_config['display_precision_general']
 
     current_chord_f_selected_unit = st.session_state.chord_input_float
     current_sagitta_f_selected_unit = st.session_state.sagitta_input_float

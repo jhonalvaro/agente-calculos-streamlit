@@ -310,7 +310,6 @@ def main():
     st.number_input(
         "Cantidad de Arcos a cubrir",
         min_value=1,
-        value=st.session_state.cantidad_arcos_widget,
         step=1,
         format="%d",
         key="cantidad_arcos_widget",

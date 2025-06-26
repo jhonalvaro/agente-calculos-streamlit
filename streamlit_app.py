@@ -272,12 +272,23 @@ def main():
         st.session_state.cantidad_arcos_widget = 1
 
     if 'chord_input_float' not in st.session_state:
-        st.session_state.chord_input_float = 10.0
+        st.session_state.chord_input_float = 1000.0
     if 'sagitta_input_float' not in st.session_state:
-        st.session_state.sagitta_input_float = 2.5
+        st.session_state.sagitta_input_float = 250.0
     if 'tube_length_input_float' not in st.session_state:
-        initial_unit_factor_to_base = UNITS_TO_METERS[st.session_state.selected_unit_name]
-        st.session_state.tube_length_input_float = float(DEFAULT_TUBE_LENGTH_BASE_UNIT / initial_unit_factor_to_base)
+        st.session_state.tube_length_input_float = 600.0
+
+    # --- Entradas adicionales ---
+    if 'perfil_tub_input' not in st.session_state:
+        st.session_state.perfil_tub_input = 0
+    if 'tam_regla_input' not in st.session_state:
+        st.session_state.tam_regla_input = 216.0
+    if 'anc_regla_input' not in st.session_state:
+        st.session_state.anc_regla_input = 37.810
+    if 'num_arcos_input' not in st.session_state:
+        st.session_state.num_arcos_input = 1
+    if 'despedico_input' not in st.session_state:
+        st.session_state.despedico_input = 40.0
 
     newly_selected_unit_name = st.selectbox("Unidad para Entradas/Resultados:", UNIT_NAMES, index=UNIT_NAMES.index(st.session_state.selected_unit_name), key="unit_selector_widget")
 
@@ -285,12 +296,16 @@ def main():
         old_unit_factor = UNITS_TO_METERS[st.session_state.selected_unit_name]
         new_unit_factor = UNITS_TO_METERS[newly_selected_unit_name]
 
-        if abs(st.session_state.chord_input_float - float(Decimal("10.0") / old_unit_factor)) < 1e-5:
-             st.session_state.chord_input_float = float(Decimal("10.0") / new_unit_factor)
-        if abs(st.session_state.sagitta_input_float - float(Decimal("2.5") / old_unit_factor)) < 1e-5:
-             st.session_state.sagitta_input_float = float(Decimal("2.5") / new_unit_factor)
-        if abs(st.session_state.tube_length_input_float - float(DEFAULT_TUBE_LENGTH_BASE_UNIT / old_unit_factor)) < 1e-5:
-            st.session_state.tube_length_input_float = float(DEFAULT_TUBE_LENGTH_BASE_UNIT / new_unit_factor)
+        if abs(st.session_state.chord_input_float - float(Decimal("1000.0") / old_unit_factor)) < 1e-5:
+            st.session_state.chord_input_float = float(Decimal("1000.0") / new_unit_factor)
+        if abs(st.session_state.sagitta_input_float - float(Decimal("250.0") / old_unit_factor)) < 1e-5:
+            st.session_state.sagitta_input_float = float(Decimal("250.0") / new_unit_factor)
+        if abs(st.session_state.tube_length_input_float - float(Decimal("600.0") / old_unit_factor)) < 1e-5:
+            st.session_state.tube_length_input_float = float(Decimal("600.0") / new_unit_factor)
+        if abs(st.session_state.tam_regla_input - float(Decimal("216.0") / old_unit_factor)) < 1e-5:
+            st.session_state.tam_regla_input = float(Decimal("216.0") / new_unit_factor)
+        if abs(st.session_state.anc_regla_input - float(Decimal("37.810") / old_unit_factor)) < 1e-5:
+            st.session_state.anc_regla_input = float(Decimal("37.810") / new_unit_factor)
 
         st.session_state.selected_unit_name = newly_selected_unit_name
         st.rerun()
@@ -322,10 +337,10 @@ def main():
         ex_data = st.session_state.example_values_float
         st.session_state.selected_unit_name = UNIT_NAMES[0]
         st.session_state.cantidad_arcos_widget = 1 # MODIFIED KEY
-        st.session_state.chord_input_float = ex_data.get('chord', 10.0)
-        st.session_state.sagitta_input_float = ex_data.get('sagitta', 2.5)
+        st.session_state.chord_input_float = ex_data.get('chord', 1000.0)
+        st.session_state.sagitta_input_float = ex_data.get('sagitta', 250.0)
         meter_unit_factor = UNITS_TO_METERS[UNIT_NAMES[0]]
-        st.session_state.tube_length_input_float = ex_data.get('tube_length', float(DEFAULT_TUBE_LENGTH_BASE_UNIT / meter_unit_factor))
+        st.session_state.tube_length_input_float = ex_data.get('tube_length', 600.0)
         del st.session_state.example_values_float; st.rerun()
 
     num_input_fmt_str = f"%.{display_prec_cfg}f"
@@ -338,8 +353,6 @@ def main():
     # --- Entradas adicionales según app de referencia ---
     st.subheader("Entradas adicionales (opcional)")
     # Perfil de tubo (entero, ej: 0)
-    if 'perfil_tub_input' not in st.session_state:
-        st.session_state.perfil_tub_input = 0
     st.session_state.perfil_tub_input = st.number_input(
         "Perfil Tubo (perfil tub.)",
         min_value=0, max_value=100, value=st.session_state.perfil_tub_input, step=1,
@@ -347,8 +360,6 @@ def main():
         help="Perfil del tubo (entero, por ejemplo 0)")
 
     # Tamaño de regla
-    if 'tam_regla_input' not in st.session_state:
-        st.session_state.tam_regla_input = 216.0
     tam_regla_val = st.session_state.tam_regla_input / float(factor_to_base_unit)
     tam_regla_val = st.number_input(
         f"Tamaño de Regla (tam. regla) en {selected_unit_name_for_display}",
@@ -358,8 +369,6 @@ def main():
     st.session_state.tam_regla_input = tam_regla_val * float(factor_to_base_unit)
 
     # Ancho de regla
-    if 'anc_regla_input' not in st.session_state:
-        st.session_state.anc_regla_input = 3.781
     anc_regla_val = st.session_state.anc_regla_input / float(factor_to_base_unit)
     anc_regla_val = st.number_input(
         f"Ancho de Regla (anc. regla) en {selected_unit_name_for_display}",
@@ -369,8 +378,6 @@ def main():
     st.session_state.anc_regla_input = anc_regla_val * float(factor_to_base_unit)
 
     # Número de arcos
-    if 'num_arcos_input' not in st.session_state:
-        st.session_state.num_arcos_input = 1
     st.session_state.num_arcos_input = st.number_input(
         "Número de Arcos (num. arcos)",
         min_value=1, max_value=1000, value=st.session_state.num_arcos_input, step=1,
@@ -378,8 +385,6 @@ def main():
         help="Número de arcos a calcular")
 
     # Despedico (porcentaje)
-    if 'despedico_input' not in st.session_state:
-        st.session_state.despedico_input = 40.0
     st.session_state.despedico_input = st.number_input(
         "Despedico (%)",
         min_value=0.0, max_value=100.0, value=st.session_state.despedico_input, step=0.1,
@@ -584,8 +589,8 @@ def perform_calculations_and_display():
             st.session_state.example_values_float = ex_data
             st.session_state.selected_unit_name = UNIT_NAMES[0]
             st.session_state.cantidad_arcos_widget = 1 # Corrected key
-            st.session_state.chord_input_float = ex_data.get('chord', 10.0)
-            st.session_state.sagitta_input_float = ex_data.get('sagitta', 2.5)
+            st.session_state.chord_input_float = ex_data.get('chord', 1000.0)
+            st.session_state.sagitta_input_float = ex_data.get('sagitta', 250.0)
             default_tube_val = float(DEFAULT_TUBE_LENGTH_BASE_UNIT / UNITS_TO_METERS[st.session_state.selected_unit_name])
             st.session_state.tube_length_input_float = ex_data.get('tube_length', default_tube_val)
             st.rerun()

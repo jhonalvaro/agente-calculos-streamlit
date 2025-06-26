@@ -697,13 +697,13 @@ if __name__ == "__main__":
     initial_unit_name = st.session_state.selected_unit_name
     initial_unit_factor = UNITS_TO_METERS[initial_unit_name]
 
+    # Usar los mismos valores por defecto que el resto de la app
     if 'chord_input_float' not in st.session_state:
-        st.session_state.chord_input_float = 10.0
+        st.session_state.chord_input_float = 1000.0
     if 'sagitta_input_float' not in st.session_state:
-        st.session_state.sagitta_input_float = 2.5
-
+        st.session_state.sagitta_input_float = 250.0
     if 'tube_length_input_float' not in st.session_state:
-        st.session_state.tube_length_input_float = float(DEFAULT_TUBE_LENGTH_BASE_UNIT / initial_unit_factor)
+        st.session_state.tube_length_input_float = float(600.0 / initial_unit_factor)
 
     main()
 

@@ -338,11 +338,13 @@ def main():
     # Tamaño de tubo
     if 'tam_tub_input' not in st.session_state:
         st.session_state.tam_tub_input = 600.0
-    st.session_state.tam_tub_input = st.number_input(
-        "Tamaño de Tubo (tam. tub.)",
-        min_value=0.0, max_value=1e6, value=st.session_state.tam_tub_input, step=1.0,
+    tam_tub_val = st.session_state.tam_tub_input / float(factor_to_base_unit)
+    tam_tub_val = st.number_input(
+        f"Tamaño de Tubo (tam. tub.) en {selected_unit_name_for_display}",
+        min_value=0.0, max_value=1e6, value=tam_tub_val, step=1.0,
         key="tam_tub_input_widget",
-        help="Tamaño del tubo (por ejemplo, largo total del tubo)")
+        help=f"Tamaño del tubo (por ejemplo, largo total del tubo) en {selected_unit_name_for_display}")
+    st.session_state.tam_tub_input = tam_tub_val * float(factor_to_base_unit)
 
     # Perfil de tubo (entero, ej: 0)
     if 'perfil_tub_input' not in st.session_state:
@@ -356,20 +358,24 @@ def main():
     # Tamaño de regla
     if 'tam_regla_input' not in st.session_state:
         st.session_state.tam_regla_input = 216.0
-    st.session_state.tam_regla_input = st.number_input(
-        "Tamaño de Regla (tam. regla)",
-        min_value=0.0, max_value=1e6, value=st.session_state.tam_regla_input, step=1.0,
+    tam_regla_val = st.session_state.tam_regla_input / float(factor_to_base_unit)
+    tam_regla_val = st.number_input(
+        f"Tamaño de Regla (tam. regla) en {selected_unit_name_for_display}",
+        min_value=0.0, max_value=1e6, value=tam_regla_val, step=1.0,
         key="tam_regla_input_widget",
-        help="Tamaño de la regla utilizada")
+        help=f"Tamaño de la regla utilizada en {selected_unit_name_for_display}")
+    st.session_state.tam_regla_input = tam_regla_val * float(factor_to_base_unit)
 
     # Ancho de regla
     if 'anc_regla_input' not in st.session_state:
         st.session_state.anc_regla_input = 3.781
-    st.session_state.anc_regla_input = st.number_input(
-        "Ancho de Regla (anc. regla)",
-        min_value=0.0, max_value=1e3, value=st.session_state.anc_regla_input, step=0.001,
+    anc_regla_val = st.session_state.anc_regla_input / float(factor_to_base_unit)
+    anc_regla_val = st.number_input(
+        f"Ancho de Regla (anc. regla) en {selected_unit_name_for_display}",
+        min_value=0.0, max_value=1e3, value=anc_regla_val, step=0.001,
         key="anc_regla_input_widget",
-        help="Ancho de la regla utilizada")
+        help=f"Ancho de la regla utilizada en {selected_unit_name_for_display}")
+    st.session_state.anc_regla_input = anc_regla_val * float(factor_to_base_unit)
 
     # Número de arcos
     if 'num_arcos_input' not in st.session_state:
@@ -388,7 +394,6 @@ def main():
         min_value=0.0, max_value=100.0, value=st.session_state.despedico_input, step=0.1,
         key="despedico_input_widget",
         help="Porcentaje de despedico")
-
     # --- Fin de entradas adicionales ---
     # Aquí se pueden agregar los cálculos específicos usando estos campos cuando se disponga de las fórmulas.
     # Por ejemplo: calcular flecha del tubo, cuerda del tubo, flecha de la regla, desarrollo de arco, etc.

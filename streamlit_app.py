@@ -335,17 +335,6 @@ def main():
 
     # --- Entradas adicionales según app de referencia ---
     st.subheader("Entradas adicionales (opcional)")
-    # Tamaño de tubo
-    if 'tam_tub_input' not in st.session_state:
-        st.session_state.tam_tub_input = 600.0
-    tam_tub_val = st.session_state.tam_tub_input / float(factor_to_base_unit)
-    tam_tub_val = st.number_input(
-        f"Tamaño de Tubo (tam. tub.) en {selected_unit_name_for_display}",
-        min_value=0.0, max_value=1e6, value=tam_tub_val, step=1.0,
-        key="tam_tub_input_widget",
-        help=f"Tamaño del tubo (por ejemplo, largo total del tubo) en {selected_unit_name_for_display}")
-    st.session_state.tam_tub_input = tam_tub_val * float(factor_to_base_unit)
-
     # Perfil de tubo (entero, ej: 0)
     if 'perfil_tub_input' not in st.session_state:
         st.session_state.perfil_tub_input = 0
@@ -615,17 +604,19 @@ def perform_calculations_and_display():
 
     # --- Cálculos estándar de geometría de arcos y tubos ---
     # Variables de entrada
-    tam_tub = st.session_state.tam_tub_input
+    # tam_tub = st.session_state.tam_tub_input  # ELIMINADO
     perfil_tub = st.session_state.perfil_tub_input
     tam_regla = st.session_state.tam_regla_input
     anc_regla = st.session_state.anc_regla_input
     num_arcos = st.session_state.num_arcos_input
     despedico = st.session_state.despedico_input
+    # Usar solo tube_length_input_float para cálculos de tubo
+    tam_tub = st.session_state.tube_length_input_float * float(factor_to_base_unit)
 
     # Cálculos básicos
     # 1. Flecha del tubo (usando cuerda y radio)
     try:
-        cuerda_tubo = tam_tub  # Suponiendo que el tamaño de tubo es la cuerda
+        cuerda_tubo = tam_tub  # Ahora el tamaño de tubo es la longitud de tubo
         radio = st.session_state.radius_display if 'radius_display' in st.session_state else None
         if radio is not None and cuerda_tubo > 0 and radio > cuerda_tubo/2:
             flecha_tubo = radio - ((radio**2 - (cuerda_tubo/2)**2)**0.5)

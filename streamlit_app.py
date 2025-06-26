@@ -386,11 +386,14 @@ def main():
 
     # Despedico (mostrar unidad seleccionada)
     despedico_val = st.session_state.despedico_input / float(factor_to_base_unit)
+    if 'despedico_input' not in st.session_state or (selected_unit_name_for_display == "Centímetros (cm)" and abs(despedico_val - 40.0) > 1e-5):
+        despedico_val = 40.0
+        st.session_state.despedico_input = despedico_val * float(factor_to_base_unit)
     despedico_val = st.number_input(
-        f"Despedico en {selected_unit_name_for_display}",
-        min_value=0.0, max_value=1000.0, value=despedico_val, step=0.01,
+        f"Despedico (cm) en {selected_unit_name_for_display}",
+        min_value=0.0, max_value=10000.0, value=despedico_val, step=0.01,
         key="despedico_input_widget",
-        help=f"Despedico en {selected_unit_name_for_display} aplicado al cálculo.")
+        help=f"Despedico en centímetros aplicado al cálculo.")
     st.session_state.despedico_input = despedico_val * float(factor_to_base_unit)
     # --- Fin de entradas adicionales ---
     # Aquí se pueden agregar los cálculos específicos usando estos campos cuando se disponga de las fórmulas.

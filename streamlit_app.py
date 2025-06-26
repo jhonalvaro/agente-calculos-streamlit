@@ -364,6 +364,9 @@ def main():
 
     # Tamaño de regla
     tam_regla_val = st.session_state.tam_regla_input / float(factor_to_base_unit)
+    if 'tam_regla_input' not in st.session_state or (selected_unit_name_for_display == "Centímetros (cm)" and abs(tam_regla_val - 216.0) > 1e-5):
+        tam_regla_val = 216.0
+        st.session_state.tam_regla_input = tam_regla_val * float(factor_to_base_unit)
     tam_regla_val = st.number_input(
         f"Tamaño de Regla (tam. regla) en {selected_unit_name_for_display}",
         min_value=0.0, max_value=1e6, value=tam_regla_val, step=1.0,

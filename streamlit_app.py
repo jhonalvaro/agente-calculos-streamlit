@@ -89,7 +89,7 @@ class OptimizedCalculator: # ... (class definition unchanged) ...
                 alpha_rad_float = math.acos(val_for_acos_float); theta_rad_float = 2 * alpha_rad_float
                 arc_length_dec = radius * Decimal(str(theta_rad_float))
                 central_angle_deg_dec = Decimal(str(math.degrees(theta_rad_float)))
-                return {"arc_length": arc_length_dec, "central_angle_deg": central_angle_deg_dec, "error": None}
+                return {"arc_length": arc_length_dec, "central_angle_deg": central_angle_dec, "error": None}
         except ValueError as ve: return {"error": f"Error de valor en cálculo de ángulo: {ve}"}
         except Exception as e: return {"error": f"Error inesperado en cálculo de arco: {e}"}
 
@@ -333,6 +333,67 @@ def main():
     st.session_state.sagitta_input_float = st.number_input(f"Sagitta/Flecha (s) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.sagitta_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="sagitta_input_widget", help=f"Altura máxima del arco.")
     st.session_state.tube_length_input_float = st.number_input(f"Longitud Tubo (L_tubo) en {selected_unit_name_for_display}", min_value=0.0, max_value=1e12, value=st.session_state.tube_length_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="tube_length_input_widget", help=f"Longitud del tubo a rolar (opcional).")
 
+    # --- Entradas adicionales según app de referencia ---
+    st.subheader("Entradas adicionales (opcional)")
+    # Tamaño de tubo
+    if 'tam_tub_input' not in st.session_state:
+        st.session_state.tam_tub_input = 600.0
+    st.session_state.tam_tub_input = st.number_input(
+        "Tamaño de Tubo (tam. tub.)",
+        min_value=0.0, max_value=1e6, value=st.session_state.tam_tub_input, step=1.0,
+        key="tam_tub_input_widget",
+        help="Tamaño del tubo (por ejemplo, largo total del tubo)")
+
+    # Perfil de tubo (entero, ej: 0)
+    if 'perfil_tub_input' not in st.session_state:
+        st.session_state.perfil_tub_input = 0
+    st.session_state.perfil_tub_input = st.number_input(
+        "Perfil Tubo (perfil tub.)",
+        min_value=0, max_value=100, value=st.session_state.perfil_tub_input, step=1,
+        key="perfil_tub_input_widget",
+        help="Perfil del tubo (entero, por ejemplo 0)")
+
+    # Tamaño de regla
+    if 'tam_regla_input' not in st.session_state:
+        st.session_state.tam_regla_input = 216.0
+    st.session_state.tam_regla_input = st.number_input(
+        "Tamaño de Regla (tam. regla)",
+        min_value=0.0, max_value=1e6, value=st.session_state.tam_regla_input, step=1.0,
+        key="tam_regla_input_widget",
+        help="Tamaño de la regla utilizada")
+
+    # Ancho de regla
+    if 'anc_regla_input' not in st.session_state:
+        st.session_state.anc_regla_input = 3.781
+    st.session_state.anc_regla_input = st.number_input(
+        "Ancho de Regla (anc. regla)",
+        min_value=0.0, max_value=1e3, value=st.session_state.anc_regla_input, step=0.001,
+        key="anc_regla_input_widget",
+        help="Ancho de la regla utilizada")
+
+    # Número de arcos
+    if 'num_arcos_input' not in st.session_state:
+        st.session_state.num_arcos_input = 1
+    st.session_state.num_arcos_input = st.number_input(
+        "Número de Arcos (num. arcos)",
+        min_value=1, max_value=1000, value=st.session_state.num_arcos_input, step=1,
+        key="num_arcos_input_widget",
+        help="Número de arcos a calcular")
+
+    # Despedico (porcentaje)
+    if 'despedico_input' not in st.session_state:
+        st.session_state.despedico_input = 40.0
+    st.session_state.despedico_input = st.number_input(
+        "Despedico (%)",
+        min_value=0.0, max_value=100.0, value=st.session_state.despedico_input, step=0.1,
+        key="despedico_input_widget",
+        help="Porcentaje de despedico")
+
+    # --- Fin de entradas adicionales ---
+    # Aquí se pueden agregar los cálculos específicos usando estos campos cuando se disponga de las fórmulas.
+    # Por ejemplo: calcular flecha del tubo, cuerda del tubo, flecha de la regla, desarrollo de arco, etc.
+    # TODO: Implementar lógica de cálculo adicional según fórmulas específicas de la app original.
+
     # Call the calculation and display function on every rerun
     perform_calculations_and_display()
 
@@ -545,6 +606,83 @@ def perform_calculations_and_display():
         '</script>'
     )
     st.markdown(js_script, unsafe_allow_html=True)
+
+    # --- Cálculos estándar de geometría de arcos y tubos ---
+    # Variables de entrada
+    tam_tub = st.session_state.tam_tub_input
+    perfil_tub = st.session_state.perfil_tub_input
+    tam_regla = st.session_state.tam_regla_input
+    anc_regla = st.session_state.anc_regla_input
+    num_arcos = st.session_state.num_arcos_input
+    despedico = st.session_state.despedico_input
+
+    # Cálculos básicos
+    # 1. Flecha del tubo (usando cuerda y radio)
+    try:
+        cuerda_tubo = tam_tub  # Suponiendo que el tamaño de tubo es la cuerda
+        radio = st.session_state.radius_display if 'radius_display' in st.session_state else None
+        if radio and cuerda_tubo > 0 and radio > cuerda_tubo/2:
+            flecha_tubo = radio - ((radio**2 - (cuerda_tubo/2)**2)**0.5)
+        else:
+            flecha_tubo = None
+    except Exception:
+        flecha_tubo = None
+
+    # 2. Cuerda del tubo (usando flecha y radio)
+    try:
+        if radio and flecha_tubo and flecha_tubo > 0:
+            cuerda_tubo_calc = 2 * ((2*radio*flecha_tubo - flecha_tubo**2)**0.5)
+        else:
+            cuerda_tubo_calc = None
+    except Exception:
+        cuerda_tubo_calc = None
+
+    # 3. Flecha de la regla (usando tam_regla y radio)
+    try:
+        if radio and tam_regla > 0 and radio > tam_regla/2:
+            flecha_regla = radio - ((radio**2 - (tam_regla/2)**2)**0.5)
+        else:
+            flecha_regla = None
+    except Exception:
+        flecha_regla = None
+
+    # 4. Desarrollo de arco (longitud de arco para cuerda y radio)
+    try:
+        if radio and cuerda_tubo > 0 and radio > cuerda_tubo/2:
+            angulo_rad = 2 * math.asin(cuerda_tubo/(2*radio))
+            desarrollo_arco = radio * angulo_rad
+        else:
+            desarrollo_arco = None
+    except Exception:
+        desarrollo_arco = None
+
+    # 5. Diámetro al eje
+    try:
+        if radio:
+            diametro_eje = 2 * radio
+        else:
+            diametro_eje = None
+    except Exception:
+        diametro_eje = None
+
+    # 6. Cantidad de tubos (longitud total de arco / tamaño de tubo)
+    try:
+        if desarrollo_arco and tam_tub > 0:
+            cantidad_tubos = desarrollo_arco / tam_tub
+        else:
+            cantidad_tubos = None
+    except Exception:
+        cantidad_tubos = None
+
+    # --- Mostrar resultados en la interfaz ---
+    st.markdown("## Resultados geométricos estándar")
+    col1, col2 = st.columns(2)
+    col1.markdown(f"**Flecha del tubo:** {flecha_tubo:.3f}" if flecha_tubo is not None else "**Flecha del tubo:** N/A")
+    col2.markdown(f"**Cuerda del tubo:** {cuerda_tubo_calc:.3f}" if cuerda_tubo_calc is not None else "**Cuerda del tubo:** N/A")
+    col1.markdown(f"**Flecha de la regla:** {flecha_regla:.3f}" if flecha_regla is not None else "**Flecha de la regla:** N/A")
+    col2.markdown(f"**Desarrollo de arco:** {desarrollo_arco:.3f}" if desarrollo_arco is not None else "**Desarrollo de arco:** N/A")
+    col1.markdown(f"**Diámetro al eje:** {diametro_eje:.3f}" if diametro_eje is not None else "**Diámetro al eje:** N/A")
+    col2.markdown(f"**Cantidad de tubos:** {cantidad_tubos:.3f}" if cantidad_tubos is not None else "**Cantidad de tubos:** N/A")
 
 if __name__ == "__main__":
     if 'selected_unit_name' not in st.session_state:

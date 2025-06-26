@@ -89,7 +89,7 @@ class OptimizedCalculator: # ... (class definition unchanged) ...
                 alpha_rad_float = math.acos(val_for_acos_float); theta_rad_float = 2 * alpha_rad_float
                 arc_length_dec = radius * Decimal(str(theta_rad_float))
                 central_angle_deg_dec = Decimal(str(math.degrees(theta_rad_float)))
-                return {"arc_length": arc_length_dec, "central_angle_deg": central_angle_deg_dec, "error": None}
+                return {"arc_length": arc_length_dec, "central_angle_deg": central_angle_dec, "error": None}
         except ValueError as ve: return {"error": f"Error de valor en cálculo de ángulo: {ve}"}
         except Exception as e: return {"error": f"Error inesperado en cálculo de arco: {e}"}
 
@@ -447,7 +447,7 @@ def perform_calculations_and_display():
                 st.session_state.methods_ui_data = [{"Método": k, f"Resultado (R)": f"{(Decimal(v)/factor_to_base_unit):.{display_prec_cfg}f}" if not v.startswith("Error") else v, "Estado": "✅" if not v.startswith("Error") else "❌"} for k,v in calc_results['methods_dec_str'].items()]
                 st.session_state.computation_time = computation_time
                 st.session_state.sag_corr_base_dec = Decimal(calc_results['sagitta_corrected_dec_str'])
-                st.session_state.sag_incorr_base_dec = Decimal(calc_results['sagitta_incorrect_dec'])
+                st.session_state.sag_incorr_base_dec = Decimal(calc_results['sagitta_incorrect_dec_str'])
                 st.session_state.err_perc_dec = Decimal(calc_results['error_percentage_dec_str'])
 
                 st.success(f"✅ **Radio del Arco Principal (R): {radius_display:.{display_prec_cfg}f} {selected_unit_name_for_display}**")
@@ -468,7 +468,8 @@ def perform_calculations_and_display():
                 methods_ui_data = [{"Método": k, f"Resultado (R)": f"{(Decimal(v)/factor_to_base_unit):.{display_prec_cfg}f}" if not v.startswith("Error") else v, "Estado": "✅" if not v.startswith("Error") else "❌"} for k,v in calc_results['methods_dec_str'].items()]
                 st.table(methods_ui_data)
 
-                sag_corr_base_dec = Decimal(calc_results['sagitta_corrected_dec_str']); sag_incorr_base_dec = Decimal(calc_results['sagitta_incorrect_dec'])
+                sag_corr_base_dec = Decimal(calc_results['sagitta_corrected_dec_str'])
+                sag_incorr_base_dec = Decimal(calc_results['sagitta_incorrect_dec_str'])
                 err_perc_dec = Decimal(calc_results['error_percentage_dec_str'])
                 sag_corr_display = sag_corr_base_dec / factor_to_base_unit
                 sag_incorr_display = sag_incorr_base_dec / factor_to_base_unit if sag_incorr_base_dec.is_finite() else Decimal('inf')

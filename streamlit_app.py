@@ -703,7 +703,7 @@ if __name__ == "__main__":
     if 'sagitta_input_float' not in st.session_state:
         st.session_state.sagitta_input_float = 250.0
     if 'tube_length_input_float' not in st.session_state:
-        st.session_state.tube_length_input_float = float(600.0 / initial_unit_factor)
+        st.session_state.tube_length_input_float = 600.0 / float(initial_unit_factor)
 
     main()
 

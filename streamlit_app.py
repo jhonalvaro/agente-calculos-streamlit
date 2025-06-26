@@ -32,6 +32,8 @@ UNITS_TO_METERS = {
 }
 UNIT_NAMES = list(UNITS_TO_METERS.keys())
 DEFAULT_TUBE_LENGTH_BASE_UNIT = Decimal("6.0")
+# Cambiar unidad por defecto a 'Centímetros (cm)'
+DEFAULT_UNIT_NAME = "Centímetros (cm)"
 
 try:
     import mpmath as mp; mp.dps = 28; MPMATH_AVAILABLE = True
@@ -265,7 +267,7 @@ def main():
 
     # --- Session State Initialization ---
     if 'selected_unit_name' not in st.session_state:
-        st.session_state.selected_unit_name = UNIT_NAMES[0]
+        st.session_state.selected_unit_name = DEFAULT_UNIT_NAME
     if 'cantidad_arcos_widget' not in st.session_state: # MODIFIED KEY
         st.session_state.cantidad_arcos_widget = 1
 
@@ -683,7 +685,7 @@ def perform_calculations_and_display():
 
 if __name__ == "__main__":
     if 'selected_unit_name' not in st.session_state:
-        st.session_state.selected_unit_name = UNIT_NAMES[0]
+        st.session_state.selected_unit_name = DEFAULT_UNIT_NAME
     if 'cantidad_arcos_widget' not in st.session_state: # Corrected key
         st.session_state.cantidad_arcos_widget = 1 # Corrected key
 

@@ -276,7 +276,10 @@ def main():
     if 'sagitta_input_float' not in st.session_state:
         st.session_state.sagitta_input_float = 250.0
     if 'tube_length_input_float' not in st.session_state:
-        st.session_state.tube_length_input_float = 600.0
+        if initial_unit_name == "Centímetros (cm)":
+            st.session_state.tube_length_input_float = 600.0
+        else:
+            st.session_state.tube_length_input_float = float(600.0 / float(initial_unit_factor))
 
     # --- Entradas adicionales ---
     if 'perfil_tub_input' not in st.session_state:
@@ -284,7 +287,7 @@ def main():
     if 'tam_regla_input' not in st.session_state:
         st.session_state.tam_regla_input = 216.0
     if 'anc_regla_input' not in st.session_state:
-        st.session_state.anc_regla_input = 37.810
+        st.session_state.anc_regla_input = 3.781
     if 'num_arcos_input' not in st.session_state:
         st.session_state.num_arcos_input = 1
     if 'despedico_input' not in st.session_state:
@@ -304,8 +307,8 @@ def main():
             st.session_state.tube_length_input_float = float(Decimal("600.0") / new_unit_factor)
         if abs(st.session_state.tam_regla_input - float(Decimal("216.0") / old_unit_factor)) < 1e-5:
             st.session_state.tam_regla_input = float(Decimal("216.0") / new_unit_factor)
-        if abs(st.session_state.anc_regla_input - float(Decimal("37.810") / old_unit_factor)) < 1e-5:
-            st.session_state.anc_regla_input = float(Decimal("37.810") / new_unit_factor)
+        if abs(st.session_state.anc_regla_input - float(Decimal("3.781") / old_unit_factor)) < 1e-5:
+            st.session_state.anc_regla_input = float(Decimal("3.781") / new_unit_factor)
 
         st.session_state.selected_unit_name = newly_selected_unit_name
         st.rerun()
@@ -703,7 +706,20 @@ if __name__ == "__main__":
     if 'sagitta_input_float' not in st.session_state:
         st.session_state.sagitta_input_float = 250.0
     if 'tube_length_input_float' not in st.session_state:
-        st.session_state.tube_length_input_float = 600.0 / float(initial_unit_factor)
+        if initial_unit_name == "Centímetros (cm)":
+            st.session_state.tube_length_input_float = 600.0
+        else:
+            st.session_state.tube_length_input_float = float(600.0 / float(initial_unit_factor))
+    if 'tam_regla_input' not in st.session_state:
+        if initial_unit_name == "Centímetros (cm)":
+            st.session_state.tam_regla_input = 216.0
+        else:
+            st.session_state.tam_regla_input = float(216.0 / float(initial_unit_factor))
+    if 'anc_regla_input' not in st.session_state:
+        if initial_unit_name == "Centímetros (cm)":
+            st.session_state.anc_regla_input = 3.781
+        else:
+            st.session_state.anc_regla_input = float(3.781 / float(initial_unit_factor))
 
     main()
 

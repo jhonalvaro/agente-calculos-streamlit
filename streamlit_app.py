@@ -299,16 +299,13 @@ def main():
         old_unit_factor = UNITS_TO_METERS[st.session_state.selected_unit_name]
         new_unit_factor = UNITS_TO_METERS[newly_selected_unit_name]
 
-        if abs(st.session_state.chord_input_float - float(Decimal("1000.0") / old_unit_factor)) < 1e-5:
-            st.session_state.chord_input_float = float(Decimal("1000.0") / new_unit_factor)
-        if abs(st.session_state.sagitta_input_float - float(Decimal("250.0") / old_unit_factor)) < 1e-5:
-            st.session_state.sagitta_input_float = float(Decimal("250.0") / new_unit_factor)
-        if abs(st.session_state.tube_length_input_float - float(Decimal("600.0") / old_unit_factor)) < 1e-5:
-            st.session_state.tube_length_input_float = float(Decimal("600.0") / new_unit_factor)
-        if abs(st.session_state.tam_regla_input - float(Decimal("216.0") / old_unit_factor)) < 1e-5:
-            st.session_state.tam_regla_input = float(Decimal("216.0") / new_unit_factor)
-        if abs(st.session_state.anc_regla_input - float(Decimal("3.781") / old_unit_factor)) < 1e-5:
-            st.session_state.anc_regla_input = float(Decimal("3.781") / new_unit_factor)
+        # Convertir todos los valores relevantes a la nueva unidad
+        st.session_state.chord_input_float = st.session_state.chord_input_float * float(old_unit_factor) / float(new_unit_factor)
+        st.session_state.sagitta_input_float = st.session_state.sagitta_input_float * float(old_unit_factor) / float(new_unit_factor)
+        st.session_state.tube_length_input_float = st.session_state.tube_length_input_float * float(old_unit_factor) / float(new_unit_factor)
+        st.session_state.tam_regla_input = st.session_state.tam_regla_input * float(old_unit_factor) / float(new_unit_factor)
+        st.session_state.anc_regla_input = st.session_state.anc_regla_input * float(old_unit_factor) / float(new_unit_factor)
+        st.session_state.despedico_input = st.session_state.despedico_input * float(old_unit_factor) / float(new_unit_factor)
 
         st.session_state.selected_unit_name = newly_selected_unit_name
         st.rerun()

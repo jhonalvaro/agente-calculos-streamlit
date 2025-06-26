@@ -376,6 +376,9 @@ def main():
 
     # Ancho de regla
     anc_regla_val = st.session_state.anc_regla_input / float(factor_to_base_unit)
+    if 'anc_regla_input' not in st.session_state or (selected_unit_name_for_display == "Centímetros (cm)" and abs(anc_regla_val - 3.7810) > 1e-5):
+        anc_regla_val = 3.7810
+        st.session_state.anc_regla_input = anc_regla_val * float(factor_to_base_unit)
     anc_regla_val = st.number_input(
         f"Ancho de Regla (anc. regla) en {selected_unit_name_for_display}",
         min_value=0.0, max_value=10000.0, value=anc_regla_val, step=0.001,

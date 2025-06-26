@@ -361,9 +361,6 @@ def main():
 
     # Tamaño de regla
     tam_regla_val = st.session_state.tam_regla_input / float(factor_to_base_unit)
-    if 'tam_regla_input' not in st.session_state or (selected_unit_name_for_display == "Centímetros (cm)" and abs(tam_regla_val - 216.0) > 1e-5):
-        tam_regla_val = 216.0
-        st.session_state.tam_regla_input = tam_regla_val * float(factor_to_base_unit)
     tam_regla_val = st.number_input(
         f"Tamaño de Regla (tam. regla) en {selected_unit_name_for_display}",
         min_value=0.0, max_value=1e6, value=tam_regla_val, step=1.0,
@@ -373,9 +370,6 @@ def main():
 
     # Ancho de regla
     anc_regla_val = st.session_state.anc_regla_input / float(factor_to_base_unit)
-    if 'anc_regla_input' not in st.session_state or (selected_unit_name_for_display == "Centímetros (cm)" and abs(anc_regla_val - 3.7810) > 1e-5):
-        anc_regla_val = 3.7810
-        st.session_state.anc_regla_input = anc_regla_val * float(factor_to_base_unit)
     anc_regla_val = st.number_input(
         f"Ancho de Regla (anc. regla) en {selected_unit_name_for_display}",
         min_value=0.0, max_value=10000.0, value=anc_regla_val, step=0.001,
@@ -390,16 +384,13 @@ def main():
         key="num_arcos_input_widget",
         help="Número de arcos a calcular")
 
-    # Despedico (centímetros)
+    # Despedico (mostrar unidad seleccionada)
     despedico_val = st.session_state.despedico_input / float(factor_to_base_unit)
-    if 'despedico_input' not in st.session_state or (selected_unit_name_for_display == "Centímetros (cm)" and abs(despedico_val - 40.0) > 1e-5):
-        despedico_val = 40.0
-        st.session_state.despedico_input = despedico_val * float(factor_to_base_unit)
     despedico_val = st.number_input(
-        f"Despedico (cm) en {selected_unit_name_for_display}",
+        f"Despedico en {selected_unit_name_for_display}",
         min_value=0.0, max_value=1000.0, value=despedico_val, step=0.01,
         key="despedico_input_widget",
-        help=f"Despedico en centímetros aplicado al cálculo.")
+        help=f"Despedico en {selected_unit_name_for_display} aplicado al cálculo.")
     st.session_state.despedico_input = despedico_val * float(factor_to_base_unit)
     # --- Fin de entradas adicionales ---
     # Aquí se pueden agregar los cálculos específicos usando estos campos cuando se disponga de las fórmulas.

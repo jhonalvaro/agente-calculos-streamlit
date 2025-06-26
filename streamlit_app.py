@@ -372,7 +372,7 @@ def main():
     anc_regla_val = st.session_state.anc_regla_input / float(factor_to_base_unit)
     anc_regla_val = st.number_input(
         f"Ancho de Regla (anc. regla) en {selected_unit_name_for_display}",
-        min_value=0.0, max_value=1e3, value=anc_regla_val, step=0.001,
+        min_value=0.0, max_value=10000.0, value=anc_regla_val, step=0.001,
         key="anc_regla_input_widget",
         help=f"Ancho de la regla utilizada en {selected_unit_name_for_display}")
     st.session_state.anc_regla_input = anc_regla_val * float(factor_to_base_unit)

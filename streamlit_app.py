@@ -103,13 +103,13 @@ def call_gemini_api(prompt: str, api_key: str) -> Dict[str, Any]: # ... (no chan
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
     headers = {'Content-Type': 'application/json'}
     try:
-        response = requests.post(url, json=payload, headers=headers, timeout=25); response.raise_for_status()
+        response = requests.post(url, json=payload, headers=headers, timeout=60); response.raise_for_status()
         data = response.json(); candidates = data.get("candidates", [])
         if not candidates: return {"success": False, "error": "Respuesta API: Sin 'candidates'"}
         content = candidates[0].get("content", {}); parts = content.get("parts", [])
         if not parts: return {"success": False, "error": "Respuesta API: Sin 'parts'"}
         text = parts[0].get("text", ""); return {"success": True, "response": text}
-    except requests.exceptions.Timeout: return {"success": False, "error": "Error API: Timeout (25s)"}
+    except requests.exceptions.Timeout: return {"success": False, "error": "Error API: Timeout (60s)"}
     except requests.exceptions.HTTPError as e: return {"success": False, "error": f"Error API: {e.response.status_code} ({e.response.reason})"}
     except requests.exceptions.RequestException as e: return {"success": False, "error": f"Error de Conexión API: {str(e)}"}
     except Exception as e: return {"success": False, "error": f"Error procesando API: {str(e)}"}

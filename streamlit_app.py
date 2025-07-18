@@ -423,7 +423,6 @@ def perform_calculations_and_display():
     elif current_tube_len_f_selected_unit < 0.0 and abs(current_tube_len_f_selected_unit) > 1e-9 : st.error("❌ Longitud del Tubo no puede ser negativa (0 si no se usa).")
     elif cantidad_arcos_val < 1: st.error("❌ Cantidad de Arcos debe ser al menos 1.")
     else:
-        # ... (rest of the calculation and display logic remains the same as previous correct version) ...
         with st.spinner("🧠 Calculando..."):
             start_time = time.time()
             calc_results = calculate_radius_all_methods(chord_base_f, sagitta_base_f, app_config['precision'])
@@ -456,8 +455,50 @@ def perform_calculations_and_display():
                 st.session_state.sag_incorr_base_dec = Decimal(calc_results['sagitta_incorrect_dec_str'])
                 st.session_state.err_perc_dec = Decimal(calc_results['error_percentage_dec_str'])
 
+                # 1. MOSTRAR RESULTADO PRINCIPAL DEL RADIO
                 st.success(f"✅ **Radio del Arco Principal (R): {radius_display:.{display_prec_cfg}f} {selected_unit_name_for_display}**")
 
+                # 2. CÁLCULO DE FLECHA PARA TUBO (PRIMERA PRIORIDAD)
+                flecha_tubo_calc_display = None
+                if current_tube_len_f_selected_unit > 1e-9:
+                    st.subheader("🏹 Cálculo de Flecha para Tubo")
+                    ui_calc = OptimizedCalculator(app_config['precision'])
+                    if radius_base_dec.is_finite() and radius_base_dec > Decimal('0'):
+                        tube_len_base_dec = Decimal(str(current_tube_len_f_selected_unit)) * factor_to_base_unit
+                        flecha_tubo_base_dec = ui_calc.calculate_sagitta_corrected(tube_len_base_dec, radius_base_dec)
+                        flecha_tubo_calc_display = flecha_tubo_base_dec / factor_to_base_unit
+                        col_t1,col_t2=st.columns(2); col_t1.metric(f"Longitud Tubo ({selected_unit_name_for_display})",f"{current_tube_len_f_selected_unit:.{app_config['display_precision_metrics']}f}"); col_t2.metric(f"Flecha Tubo Calculada ({selected_unit_name_for_display})",f"{flecha_tubo_calc_display:.{display_prec_cfg}f}")
+                        st.caption(f"Valores en {selected_unit_name_for_display}")
+                    else: 
+                        st.warning("No se calcula flecha de tubo: radio del arco principal no válido.")
+
+                # 3. AJUSTE DE TUBOS EN EL ARCO (SEGUNDA PRIORIDAD)
+                num_tubes_output_str = "N/A"
+                if current_tube_len_f_selected_unit > 1e-9 and arc_length_display_one_arc is not None and arc_length_display_one_arc > Decimal('1e-7') and not arc_calc_err:
+                    total_arc_length_for_tubes_display = arc_length_display_one_arc * cantidad_arcos_val
+                    tube_len_selected_unit_dec = Decimal(str(current_tube_len_f_selected_unit))
+                    if tube_len_selected_unit_dec > Decimal('1e-9'):
+                        num_tubes_precise = total_arc_length_for_tubes_display / tube_len_selected_unit_dec
+                        full_tubes = math.floor(num_tubes_precise)
+                        remainder_fraction = num_tubes_precise - Decimal(str(full_tubes))
+                        remainder_length_display = remainder_fraction * tube_len_selected_unit_dec
+                        num_tubes_output_str = f"{full_tubes} entero(s) y un segmento de {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display}"
+                    else:
+                        num_tubes_output_str = "Longitud de tubo inválida para cálculo de ajuste."
+                        full_tubes = 0; remainder_length_display = Decimal('0')
+
+                    st.subheader("🧩 Ajuste de Tubos en el Arco")
+                    st.write(f"Cantidad de Arcos Considerada: **{cantidad_arcos_val}**")
+                    st.write(f"Longitud Total de Arco a Cubrir: **{total_arc_length_for_tubes_display:.{display_prec_cfg}f} {selected_unit_name_for_display}**")
+                    st.write(f"Longitud de cada Tubo: **{current_tube_len_f_selected_unit:.{app_config['display_precision_metrics']}f} {selected_unit_name_for_display}**")
+                    if "entero(s)" in num_tubes_output_str :
+                         st.metric(label="Resultado del Ajuste", value=f"{full_tubes} tubos + {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display}")
+                         st.caption(f"El segmento adicional mide {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display} (equivale a {remainder_fraction:.{display_prec_cfg}f} del largo de un tubo).")
+                    else: st.warning(num_tubes_output_str)
+                elif arc_calc_err and current_tube_len_f_selected_unit > 1e-9: 
+                    st.caption(f"Ajuste de tubos no calculado (error en L_arco): {arc_calc_err}")
+
+                # 4. DIMENSIONES DEL ARCO PRINCIPAL
                 if arc_calc_err: st.warning(f"Info cálculo de arco: {arc_calc_err}")
                 elif arc_length_display_one_arc is not None and arc_length_display_one_arc > Decimal('1e-7'):
                     st.subheader("📏 Dimensiones del Arco Principal (por unidad)")
@@ -465,15 +506,18 @@ def perform_calculations_and_display():
                     col_L.metric(f"Longitud de 1 Arco (L_arco)", f"{arc_length_display_one_arc:.{display_prec_cfg}f} {selected_unit_name_for_display}")
                     if central_angle_display is not None: col_A.metric("Ángulo Central (por arco)", f"{central_angle_display:.{display_prec_cfg}f}°")
 
+                # 5. MÉTRICAS DE CONFIANZA Y TIEMPO
                 confidence_dec = Decimal(calc_results['confidence_dec_str'])
                 col_m1,col_m2,col_m3=st.columns(3); col_m1.metric("Confianza (Radio)",f"{confidence_dec:.2%}")
                 valid_m_cnt=sum(1 for v in calc_results['methods_dec_str'].values() if not v.startswith("Error"))
                 col_m2.metric("Métodos Válidos",f"{valid_m_cnt}/{len(calc_results['methods_dec_str'])}"); col_m3.metric("Tiempo Cálculo",f"{computation_time*1000:.1f}ms")
 
+                # 6. DETALLES DEL CÁLCULO DEL RADIO
                 st.subheader(f"Detalles del Cálculo del Radio (en {selected_unit_name_for_display})")
                 methods_ui_data = [{"Método": k, f"Resultado (R)": f"{(Decimal(v)/factor_to_base_unit):.{display_prec_cfg}f}" if not v.startswith("Error") else v, "Estado": "✅" if not v.startswith("Error") else "❌"} for k,v in calc_results['methods_dec_str'].items()]
                 st.table(methods_ui_data)
 
+                # 7. VERIFICACIÓN DE SAGITTA
                 sag_corr_base_dec = Decimal(calc_results['sagitta_corrected_dec_str'])
                 sag_incorr_base_dec = Decimal(calc_results['sagitta_incorrect_dec_str'])
                 err_perc_dec = Decimal(calc_results['error_percentage_dec_str'])
@@ -484,51 +528,18 @@ def perform_calculations_and_display():
                 if err_perc_dec.is_finite(): st.info(f"Error relativo (sagitta): {err_perc_dec:.1f}%")
                 else: st.info("Error relativo (sagitta): Indefinido.")
 
+                # 8. VISUALIZACIONES (AL FINAL)
                 st.subheader("📊 Visualización del Arco Principal")
                 main_arc_plot_fig = create_single_arc_visualization(Decimal(str(current_chord_f_selected_unit)), Decimal(str(current_sagitta_f_selected_unit)), radius_display, plot_title_prefix="Arco Principal", display_precision_cfg=display_prec_cfg, unit_name=selected_unit_name_for_display)
                 if main_arc_plot_fig and PLOTLY_AVAILABLE: st.plotly_chart(main_arc_plot_fig, use_container_width=True)
 
-                flecha_tubo_calc_display = None
-                num_tubes_output_str = "N/A"
+                # 9. VISUALIZACIÓN DEL TUBO ROLADO (SI APLICA)
+                if flecha_tubo_calc_display is not None and current_tube_len_f_selected_unit > 1e-9:
+                    st.subheader("📊 Visualización del Tubo Rolado")
+                    tube_arc_plot_fig = create_single_arc_visualization(Decimal(str(current_tube_len_f_selected_unit)), flecha_tubo_calc_display, radius_display, plot_title_prefix="Tubo Rolado", display_precision_cfg=display_prec_cfg, unit_name=selected_unit_name_for_display)
+                    if tube_arc_plot_fig and PLOTLY_AVAILABLE: st.plotly_chart(tube_arc_plot_fig, use_container_width=True)
 
-                if current_tube_len_f_selected_unit > 1e-9:
-                    st.subheader("🏹 Cálculo de Flecha para Tubo")
-                    ui_calc = OptimizedCalculator(app_config['precision'])
-                    if radius_base_dec.is_finite() and radius_base_dec > Decimal('0'):
-                        tube_len_base_dec = Decimal(str(current_tube_len_f_selected_unit)) * factor_to_base_unit
-                        flecha_tubo_base_dec = ui_calc.calculate_sagitta_corrected(tube_len_base_dec, radius_base_dec)
-                        flecha_tubo_calc_display = flecha_tubo_base_dec / factor_to_base_unit
-                        col_t1,col_t2=st.columns(2); col_t1.metric(f"Longitud Tubo ({selected_unit_name_for_display})",f"{current_tube_len_f_selected_unit:.{app_config['display_precision_metrics']}f}"); col_t2.metric(f"Flecha Tubo Calculada ({selected_unit_name_for_display})",f"{flecha_tubo_calc_display:.{display_prec_cfg}f}")
-                        st.caption(f"Valores en {selected_unit_name_for_display}")
-
-                        st.subheader("📊 Visualización del Tubo Rolado")
-                        tube_arc_plot_fig = create_single_arc_visualization(Decimal(str(current_tube_len_f_selected_unit)), flecha_tubo_calc_display, radius_display, plot_title_prefix="Tubo Rolado", display_precision_cfg=display_prec_cfg, unit_name=selected_unit_name_for_display)
-                        if tube_arc_plot_fig and PLOTLY_AVAILABLE: st.plotly_chart(tube_arc_plot_fig, use_container_width=True)
-
-                        if arc_length_display_one_arc is not None and arc_length_display_one_arc > Decimal('1e-7') and not arc_calc_err:
-                            total_arc_length_for_tubes_display = arc_length_display_one_arc * cantidad_arcos_val
-                            tube_len_selected_unit_dec = Decimal(str(current_tube_len_f_selected_unit))
-                            if tube_len_selected_unit_dec > Decimal('1e-9'):
-                                num_tubes_precise = total_arc_length_for_tubes_display / tube_len_selected_unit_dec
-                                full_tubes = math.floor(num_tubes_precise)
-                                remainder_fraction = num_tubes_precise - Decimal(str(full_tubes))
-                                remainder_length_display = remainder_fraction * tube_len_selected_unit_dec
-                                num_tubes_output_str = f"{full_tubes} entero(s) y un segmento de {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display}"
-                            else:
-                                num_tubes_output_str = "Longitud de tubo inválida para cálculo de ajuste."
-                                full_tubes = 0; remainder_length_display = Decimal('0')
-
-                            st.subheader("🧩 Ajuste de Tubos en el Arco")
-                            st.write(f"Cantidad de Arcos Considerada: **{cantidad_arcos_val}**")
-                            st.write(f"Longitud Total de Arco a Cubrir: **{total_arc_length_for_tubes_display:.{display_prec_cfg}f} {selected_unit_name_for_display}**")
-                            st.write(f"Longitud de cada Tubo: **{current_tube_len_f_selected_unit:.{app_config['display_precision_metrics']}f} {selected_unit_name_for_display}**")
-                            if "entero(s)" in num_tubes_output_str :
-                                 st.metric(label="Resultado del Ajuste", value=f"{full_tubes} tubos + {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display}")
-                                 st.caption(f"El segmento adicional mide {remainder_length_display:.{display_prec_cfg}f} {selected_unit_name_for_display} (equivale a {remainder_fraction:.{display_prec_cfg}f} del largo de un tubo).")
-                            else: st.warning(num_tubes_output_str)
-                        elif arc_calc_err: st.caption(f"Ajuste de tubos no calculado (error en L_arco): {arc_calc_err}")
-                    else: st.warning("No se calcula flecha de tubo: radio del arco principal no válido.")
-
+                # 10. ANÁLISIS CON IA (AL FINAL)
                 if app_config['gemini_api_key'] and REQUESTS_AVAILABLE:
                     with st.expander("🤖 Análisis con IA (Opcional)", expanded=False):
                         with st.spinner("🧠 Consultando IA..."):
@@ -566,20 +577,18 @@ def perform_calculations_and_display():
                 st.session_state.sag_incorr_display = sag_incorr_display
                 st.session_state.err_perc_dec = err_perc_dec
                 st.session_state.flecha_tubo_calc_display = flecha_tubo_calc_display
+                st.session_state.num_tubes_output_str = num_tubes_output_str
                 
                 # Guardar datos de tubos si fueron calculados
                 try:
-                    if tube_usable_length is not None: # type: ignore
-                        st.session_state.tube_usable_length = tube_usable_length # type: ignore
-                        st.session_state.num_tubes_output_str = num_tubes_output_str
-                        if 'total_arc_length_for_tubes_display' in locals():
-                            st.session_state.total_arc_length_for_tubes_display = total_arc_length_for_tubes_display
-                except NameError:
-                    pass
+                    if 'total_arc_length_for_tubes_display' in locals():
+                        st.session_state.total_arc_length_for_tubes_display = total_arc_length_for_tubes_display
                     if 'full_tubes' in locals():
                         st.session_state.full_tubes = full_tubes
                     if 'remainder_length_display' in locals():
                         st.session_state.remainder_length_display = remainder_length_display
+                except NameError:
+                    pass
 
             else:
                 st.error(f"❌ {calc_results.get('error', 'Error en cálculo principal.')}")

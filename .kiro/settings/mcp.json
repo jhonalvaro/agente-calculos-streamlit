@@ -1,0 +1,41 @@
+{
+    "mcpServers": {
+        "exa": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "exa-mcp-server"
+            ],
+            "env": {
+                "EXA_API_KEY": "d20003a8-d439-4f93-9d80-aec8fb24191a"
+            }
+        },
+        "context7": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@upstash/context7-mcp@latest"
+            ],
+            "env": {
+                "DEFAULT_MINIMUM_TOKENS": "10000"
+            }
+        },
+        "Ref": {
+            "command": "npx",
+            "args": [
+            "mcp-remote@0.1.0-0",
+            "https://api.ref.tools/mcp",
+            "--header",
+            "x-ref-api-key:ref-ac5d5f6d1f02b0b2aa3a"
+            ]        
+        },        
+        "Puppeteer": {
+                "command": "npx",
+                "args": [
+                  "-y",
+                  "@modelcontextprotocol/server-puppeteer"
+                ],
+                "env": {}
+        }     
+    }
+}

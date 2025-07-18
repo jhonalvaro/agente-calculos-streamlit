@@ -211,13 +211,16 @@ def main():
     if 'perfil_tub_input' not in st.session_state:
         st.session_state.perfil_tub_input = 0
     if 'tam_regla_input' not in st.session_state:
-        st.session_state.tam_regla_input = 216.0
+        # Inicializar en metros (unidad base) - 216 cm = 2.16 m
+        st.session_state.tam_regla_input = 2.16
     if 'anc_regla_input' not in st.session_state:
-        st.session_state.anc_regla_input = 3.781
+        # Inicializar en metros (unidad base) - 3.781 cm = 0.03781 m
+        st.session_state.anc_regla_input = 0.03781
     if 'num_arcos_input' not in st.session_state:
         st.session_state.num_arcos_input = 1
     if 'despedico_input' not in st.session_state:
-        st.session_state.despedico_input = 40.0
+        # Inicializar en metros (unidad base) - 40 cm = 0.4 m
+        st.session_state.despedico_input = 0.4
 
     newly_selected_unit_name = st.selectbox("Unidad para Entradas/Resultados:", UNIT_NAMES, index=UNIT_NAMES.index(st.session_state.selected_unit_name), key="unit_selector_widget")
 

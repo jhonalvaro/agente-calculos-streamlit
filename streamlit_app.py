@@ -298,6 +298,14 @@ def main():
 
     # Ancho de regla
     anc_regla_val = st.session_state.anc_regla_input / float(factor_to_base_unit)
+    # Ajustar el valor si está fuera del rango permitido
+    if anc_regla_val > 10000.0:
+        anc_regla_val = 10000.0
+        st.session_state.anc_regla_input = anc_regla_val * float(factor_to_base_unit)
+    elif anc_regla_val < 0.0:
+        anc_regla_val = 0.0
+        st.session_state.anc_regla_input = anc_regla_val * float(factor_to_base_unit)
+    
     anc_regla_val = st.number_input(
         f"Ancho de Regla (anc. regla) en {selected_unit_name_for_display}",
         min_value=0.0, max_value=10000.0, value=anc_regla_val, step=0.001,

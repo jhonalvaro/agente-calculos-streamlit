@@ -30,6 +30,24 @@ UNITS_TO_METERS = {
     "Pulgadas (in)": Decimal("0.0254"),
     "Pies (ft)": Decimal("0.3048")
 }
+
+# Precisión de decimales para mostrar según la unidad
+UNIT_DECIMAL_PRECISION = {
+    "Metros (m)": 2,        # 0.01
+    "Centímetros (cm)": 1,  # 0.1
+    "Milímetros (mm)": 0,   # 1
+    "Pulgadas (in)": 3,     # 0.001 (aproximadamente 0.254/1000)
+    "Pies (ft)": 4          # 0.0001 (más precisión para pies)
+}
+
+# Step values para los inputs según la unidad
+UNIT_STEP_VALUES = {
+    "Metros (m)": 0.01,
+    "Centímetros (cm)": 0.1,
+    "Milímetros (mm)": 1.0,
+    "Pulgadas (in)": 0.001,
+    "Pies (ft)": 0.0001
+}
 UNIT_NAMES = list(UNITS_TO_METERS.keys())
 DEFAULT_TUBE_LENGTH_BASE_UNIT = Decimal("6.0")
 # Cambiar unidad por defecto a 'Centímetros (cm)'
@@ -183,10 +201,11 @@ def main():
     if 'sagitta_input_float' not in st.session_state:
         st.session_state.sagitta_input_float = 250.0
     if 'tube_length_input_float' not in st.session_state:
-        if initial_unit_name == "Centímetros (cm)":
+        if st.session_state.selected_unit_name == "Centímetros (cm)":
             st.session_state.tube_length_input_float = 600.0
         else:
-            st.session_state.tube_length_input_float = float(600.0 / float(initial_unit_factor))
+            current_unit_factor = UNITS_TO_METERS[st.session_state.selected_unit_name]
+            st.session_state.tube_length_input_float = float(600.0 * float(UNITS_TO_METERS["Centímetros (cm)"]) / float(current_unit_factor))
 
     # --- Entradas adicionales ---
     if 'perfil_tub_input' not in st.session_state:
@@ -250,12 +269,14 @@ def main():
         st.session_state.tube_length_input_float = ex_data.get('tube_length', 600.0)
         del st.session_state.example_values_float; st.rerun()
 
-    num_input_fmt_str = f"%.{display_prec_cfg}f"
-    num_input_stp_val = 1.0 / (10**display_prec_cfg)
+    # Usar precisión específica según la unidad seleccionada
+    unit_precision = UNIT_DECIMAL_PRECISION[selected_unit_name_for_display]
+    unit_step = UNIT_STEP_VALUES[selected_unit_name_for_display]
+    num_input_fmt_str = f"%.{unit_precision}f"
 
-    st.session_state.chord_input_float = st.number_input(f"Cuerda (c) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.chord_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="chord_input_widget", help=f"Longitud de la cuerda del arco.")
-    st.session_state.sagitta_input_float = st.number_input(f"Sagitta/Flecha (s) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.sagitta_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="sagitta_input_widget", help=f"Altura máxima del arco.")
-    st.session_state.tube_length_input_float = st.number_input(f"Longitud Tubo (L_tubo) en {selected_unit_name_for_display}", min_value=0.0, max_value=1e12, value=st.session_state.tube_length_input_float, step=num_input_stp_val, format=num_input_fmt_str, key="tube_length_input_widget", help=f"Longitud del tubo a rolar (opcional).")
+    st.session_state.chord_input_float = st.number_input(f"Cuerda (c) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.chord_input_float, step=unit_step, format=num_input_fmt_str, key="chord_input_widget", help=f"Longitud de la cuerda del arco.")
+    st.session_state.sagitta_input_float = st.number_input(f"Sagitta/Flecha (s) en {selected_unit_name_for_display}", min_value=1e-9, max_value=1e12, value=st.session_state.sagitta_input_float, step=unit_step, format=num_input_fmt_str, key="sagitta_input_widget", help=f"Altura máxima del arco.")
+    st.session_state.tube_length_input_float = st.number_input(f"Longitud Tubo (L_tubo) en {selected_unit_name_for_display}", min_value=0.0, max_value=1e12, value=st.session_state.tube_length_input_float, step=unit_step, format=num_input_fmt_str, key="tube_length_input_widget", help=f"Longitud del tubo a rolar (opcional).")
 
     # --- Entradas adicionales según app de referencia ---
     st.subheader("Entradas adicionales (opcional)")
@@ -314,7 +335,8 @@ def perform_calculations_and_display():
     # Acceso a variables desde el estado de sesión y definición local de factor_to_base_unit
     selected_unit_name_for_display = st.session_state.selected_unit_name
     factor_to_base_unit = UNITS_TO_METERS[selected_unit_name_for_display]
-    display_prec_cfg = app_config['display_precision_general']
+    # Usar precisión específica según la unidad seleccionada para mostrar resultados
+    display_prec_cfg = UNIT_DECIMAL_PRECISION[selected_unit_name_for_display]
 
     current_chord_f_selected_unit = st.session_state.chord_input_float
     current_sagitta_f_selected_unit = st.session_state.sagitta_input_float
@@ -708,29 +730,29 @@ if __name__ == "__main__":
     if 'cantidad_arcos_widget' not in st.session_state: # Corrected key
         st.session_state.cantidad_arcos_widget = 1 # Corrected key
 
-    initial_unit_name = st.session_state.selected_unit_name
-    initial_unit_factor = UNITS_TO_METERS[initial_unit_name]
-
     # Usar los mismos valores por defecto que el resto de la app
     if 'chord_input_float' not in st.session_state:
         st.session_state.chord_input_float = 1000.0
     if 'sagitta_input_float' not in st.session_state:
         st.session_state.sagitta_input_float = 250.0
     if 'tube_length_input_float' not in st.session_state:
-        if initial_unit_name == "Centímetros (cm)":
+        if st.session_state.selected_unit_name == "Centímetros (cm)":
             st.session_state.tube_length_input_float = 600.0
         else:
-            st.session_state.tube_length_input_float = float(600.0 / float(initial_unit_factor))
+            current_unit_factor = UNITS_TO_METERS[st.session_state.selected_unit_name]
+            st.session_state.tube_length_input_float = float(600.0 * float(UNITS_TO_METERS["Centímetros (cm)"]) / float(current_unit_factor))
     if 'tam_regla_input' not in st.session_state:
-        if initial_unit_name == "Centímetros (cm)":
+        if st.session_state.selected_unit_name == "Centímetros (cm)":
             st.session_state.tam_regla_input = 216.0
         else:
-            st.session_state.tam_regla_input = float(216.0 / float(initial_unit_factor))
+            current_unit_factor = UNITS_TO_METERS[st.session_state.selected_unit_name]
+            st.session_state.tam_regla_input = float(216.0 * float(UNITS_TO_METERS["Centímetros (cm)"]) / float(current_unit_factor))
     if 'anc_regla_input' not in st.session_state:
-        if initial_unit_name == "Centímetros (cm)":
+        if st.session_state.selected_unit_name == "Centímetros (cm)":
             st.session_state.anc_regla_input = 3.781
         else:
-            st.session_state.anc_regla_input = float(3.781 / float(initial_unit_factor))
+            current_unit_factor = UNITS_TO_METERS[st.session_state.selected_unit_name]
+            st.session_state.anc_regla_input = float(3.781 * float(UNITS_TO_METERS["Centímetros (cm)"]) / float(current_unit_factor))
 
     main()
 

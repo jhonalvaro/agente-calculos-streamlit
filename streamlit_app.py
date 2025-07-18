@@ -209,19 +209,28 @@ def main():
 
     # --- Entradas adicionales ---
     if 'perfil_tub_input' not in st.session_state:
-        # Inicializar en metros (unidad base) - 4.8 cm = 0.048 m
-        st.session_state.perfil_tub_input = 0.048
+        # Inicializar según la unidad por defecto (Centímetros)
+        if st.session_state.selected_unit_name == "Centímetros (cm)":
+            st.session_state.perfil_tub_input = 4.8 * float(UNITS_TO_METERS["Centímetros (cm)"])
+        else:
+            st.session_state.perfil_tub_input = 0.048
     if 'tam_regla_input' not in st.session_state:
-        # Inicializar en metros (unidad base) - 216 cm = 2.16 m
-        st.session_state.tam_regla_input = 2.16
+        # Inicializar según la unidad por defecto (Centímetros)
+        if st.session_state.selected_unit_name == "Centímetros (cm)":
+            st.session_state.tam_regla_input = 216.0 * float(UNITS_TO_METERS["Centímetros (cm)"])
+        else:
+            st.session_state.tam_regla_input = 2.16
     if 'anc_regla_input' not in st.session_state:
-        # Inicializar en metros (unidad base) - 3.781 cm = 0.03781 m
-        st.session_state.anc_regla_input = 0.03781
+        # Inicializar según la unidad por defecto (Centímetros)
+        if st.session_state.selected_unit_name == "Centímetros (cm)":
+            st.session_state.anc_regla_input = 3.781 * float(UNITS_TO_METERS["Centímetros (cm)"])
+        else:
+            st.session_state.anc_regla_input = 0.03781
     if 'num_arcos_input' not in st.session_state:
         st.session_state.num_arcos_input = 1
     if 'despedico_input' not in st.session_state:
-        # Inicializar en metros (unidad base) - 40 cm = 0.4 m
-        st.session_state.despedico_input = 0.4
+        # Despedico siempre en centímetros
+        st.session_state.despedico_input = 40.0 * float(UNITS_TO_METERS["Centímetros (cm)"])
 
     newly_selected_unit_name = st.selectbox("Unidad para Entradas/Resultados:", UNIT_NAMES, index=UNIT_NAMES.index(st.session_state.selected_unit_name), key="unit_selector_widget")
 

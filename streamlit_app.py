@@ -233,9 +233,10 @@ def main():
         st.session_state.chord_input_float = st.session_state.chord_input_float * float(old_unit_factor) / float(new_unit_factor)
         st.session_state.sagitta_input_float = st.session_state.sagitta_input_float * float(old_unit_factor) / float(new_unit_factor)
         st.session_state.tube_length_input_float = st.session_state.tube_length_input_float * float(old_unit_factor) / float(new_unit_factor)
+        st.session_state.perfil_tub_input = st.session_state.perfil_tub_input * float(old_unit_factor) / float(new_unit_factor)
         st.session_state.tam_regla_input = st.session_state.tam_regla_input * float(old_unit_factor) / float(new_unit_factor)
         st.session_state.anc_regla_input = st.session_state.anc_regla_input * float(old_unit_factor) / float(new_unit_factor)
-        st.session_state.despedico_input = st.session_state.despedico_input * float(old_unit_factor) / float(new_unit_factor)
+        # Despedico NO se convierte, siempre permanece en centímetros
 
         st.session_state.selected_unit_name = newly_selected_unit_name
         st.rerun()

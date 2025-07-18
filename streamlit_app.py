@@ -209,7 +209,8 @@ def main():
 
     # --- Entradas adicionales ---
     if 'perfil_tub_input' not in st.session_state:
-        st.session_state.perfil_tub_input = 0
+        # Inicializar en metros (unidad base) - 4.8 cm = 0.048 m
+        st.session_state.perfil_tub_input = 0.048
     if 'tam_regla_input' not in st.session_state:
         # Inicializar en metros (unidad base) - 216 cm = 2.16 m
         st.session_state.tam_regla_input = 2.16
@@ -283,12 +284,14 @@ def main():
 
     # --- Entradas adicionales según app de referencia ---
     st.subheader("Entradas adicionales (opcional)")
-    # Perfil de tubo (entero, ej: 0)
-    st.session_state.perfil_tub_input = st.number_input(
-        "Perfil Tubo (perfil tub.)",
-        min_value=0, max_value=100, value=st.session_state.perfil_tub_input, step=1,
+    # Perfil de tubo (decimal, ej: 4.8 cm)
+    perfil_tub_val = st.session_state.perfil_tub_input / float(factor_to_base_unit)
+    perfil_tub_val = st.number_input(
+        f"Perfil Tubo (perfil tub.) en {selected_unit_name_for_display}",
+        min_value=0.0, max_value=100.0, value=perfil_tub_val, step=unit_step, format=num_input_fmt_str,
         key="perfil_tub_input_widget",
-        help="Perfil del tubo (entero, por ejemplo 0)")
+        help=f"Perfil del tubo en {selected_unit_name_for_display}")
+    st.session_state.perfil_tub_input = perfil_tub_val * float(factor_to_base_unit)
 
     # Tamaño de regla
     tam_regla_val = st.session_state.tam_regla_input / float(factor_to_base_unit)

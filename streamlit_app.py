@@ -169,99 +169,6 @@ def main():
     app_config = init_app_config()
     getcontext().prec = app_config['precision']
     display_prec_cfg = app_config['display_precision_general']
-    # --- Bloque de Chat Asistente IA ---
-    st.markdown("---")
-    st.header("💬 Asistente IA (Gemini Flash 2)")
-    if 'chat_history' not in st.session_state:
-        st.session_state.chat_history = []
-    if 'chat_context' not in st.session_state:
-        st.session_state.chat_context = {}
-    if st.button("🔄 Resetear chat y contexto", key="reset_chat_btn", use_container_width=True):
-        st.session_state.chat_history = []
-        st.session_state.chat_context = {}
-        st.rerun()
-
-    # Sugerencias dinámicas según contexto
-    sugerencias = [
-        "¿Cuántos tubos necesito para cubrir todos los arcos?",
-        "¿Cómo se calcula el radio con los datos actuales?",
-        "Muéstrame el gráfico del arco principal.",
-        "¿Puedo cambiar la longitud del tubo a 100?",
-        "Explica de forma sencilla cómo se obtiene la sagitta."
-    ]
-    # Si hay cálculos, sugerencias más específicas
-    if 'radius_display' in st.session_state:
-        sugerencias.insert(0, f"¿Por qué el radio calculado es {st.session_state.radius_display:.1f}?")
-    if 'num_tubes_output_str' in st.session_state:
-        sugerencias.insert(0, f"¿Qué significa: {st.session_state.num_tubes_output_str}?")
-
-    st.caption("Sugerencias rápidas:")
-    cols_sug = st.columns(len(sugerencias))
-    for idx, sug in enumerate(sugerencias):
-        if cols_sug[idx].button(sug, key=f"sug_{idx}", use_container_width=True):
-            st.session_state.chat_input = sug
-            st.rerun()
-
-    # Entrada de usuario
-    chat_input = st.text_input("Escribe tu pregunta o instrucción:", value=st.session_state.get('chat_input', ''), key="chat_input_box")
-    enviar = st.button("Enviar", key="enviar_chat_btn", use_container_width=True)
-
-    # Procesar mensaje
-    if enviar and chat_input.strip():
-        # Construir contexto para IA con TODOS los datos de entrada actuales y resultados
-        contexto = []
-        contexto.append(f"Unidad seleccionada: {st.session_state.get('selected_unit_name', 'N/A')}")
-        contexto.append(f"Cuerda (c): {st.session_state.get('chord_input_float', 'N/A')}")
-        contexto.append(f"Sagitta (s): {st.session_state.get('sagitta_input_float', 'N/A')}")
-        contexto.append(f"Longitud de tubo (L_tubo): {st.session_state.get('tube_length_input_float', 'N/A')}")
-        contexto.append(f"Cantidad de arcos: {st.session_state.get('cantidad_arcos_widget', 'N/A')}")
-        if 'radius_display' in st.session_state:
-            contexto.append(f"Radio calculado: {st.session_state.radius_display}")
-        if 'arc_length_display_one_arc' in st.session_state:
-            contexto.append(f"Longitud de arco (1 arco): {st.session_state.arc_length_display_one_arc}")
-        if 'num_tubes_output_str' in st.session_state:
-            contexto.append(f"Resultado de ajuste de tubos: {st.session_state.num_tubes_output_str}")
-        # Incluir historial si se desea contexto
-        historial = "\n".join([f"Usuario: {h['user']}\nAsistente: {h['ai']}" for h in st.session_state.chat_history])
-        prompt = (
-            f"Historial previo:\n{historial}\n" if historial else ""
-        ) + (
-            "\n".join(contexto) + "\n" if contexto else ""
-        ) + f"\nPregunta o instrucción del usuario: {chat_input}\n"
-
-        # Llamar a Gemini Flash 2
-        ai_response = call_gemini_api(prompt, app_config['gemini_api_key'])
-        if ai_response["success"]:
-            respuesta = ai_response["response"]
-            # Detectar si el usuario quiere cambiar algún valor
-            # (Ejemplo simple: "cambiar cuerda a 50")
-            import re
-            cambios = []
-            for campo, key, tipo in [
-                ("cuerda", "chord_input_float", float),
-                ("sagitta", "sagitta_input_float", float),
-                ("longitud de tubo", "tube_length_input_float", float),
-                ("cantidad de arcos", "cantidad_arcos_widget", int)
-            ]:
-                patron = rf"cambiar {campo} a ([0-9]+(\.[0-9]+)?)"
-                m = re.search(patron, chat_input, re.IGNORECASE)
-                if m:
-                    nuevo_valor = tipo(m.group(1))
-                    st.session_state[key] = nuevo_valor
-                    cambios.append(f"{campo} cambiado a {nuevo_valor}")
-            st.session_state.chat_history.append({"user": chat_input, "ai": respuesta})
-            st.markdown(f"<div style='background:#23272f;color:#f5f5fa;padding:0.5em 1em;border-radius:8px;margin-bottom:0.5em;'><b>Asistente:</b> {respuesta}</div>", unsafe_allow_html=True)
-            if cambios:
-                st.success("; ".join(cambios))
-        else:
-            st.session_state.chat_history.append({"user": chat_input, "ai": f"❌ {ai_response['error']}"})
-            st.session_state.chat_input = chat_input
-        st.rerun()
-
-    # Mostrar historial de chat
-    for h in st.session_state.chat_history[-8:]:
-        st.markdown(f"<div style='background:#23272f;color:#f5f5fa;padding:0.5em 1em;border-radius:8px;margin-bottom:0.5em;'><b>Usuario:</b> {h['user']}<br><b>Asistente:</b> {h['ai']}</div>", unsafe_allow_html=True)
-    # app_config ya inicializado arriba
 
     st.title("🔢 Calculadora de Precisión para Arcos y Tubos")
 
@@ -592,6 +499,99 @@ def perform_calculations_and_display():
 
             else:
                 st.error(f"❌ {calc_results.get('error', 'Error en cálculo principal.')}")
+
+    # --- Bloque de Chat Asistente IA (AL FINAL) ---
+    st.markdown("---")
+    st.header("💬 Asistente IA (Gemini Flash 2)")
+    if 'chat_history' not in st.session_state:
+        st.session_state.chat_history = []
+    if 'chat_context' not in st.session_state:
+        st.session_state.chat_context = {}
+    if st.button("🔄 Resetear chat y contexto", key="reset_chat_btn", use_container_width=True):
+        st.session_state.chat_history = []
+        st.session_state.chat_context = {}
+        st.rerun()
+
+    # Sugerencias dinámicas según contexto
+    sugerencias = [
+        "¿Cuántos tubos necesito para cubrir todos los arcos?",
+        "¿Cómo se calcula el radio con los datos actuales?",
+        "Muéstrame el gráfico del arco principal.",
+        "¿Puedo cambiar la longitud del tubo a 100?",
+        "Explica de forma sencilla cómo se obtiene la sagitta."
+    ]
+    # Si hay cálculos, sugerencias más específicas
+    if 'radius_display' in st.session_state:
+        sugerencias.insert(0, f"¿Por qué el radio calculado es {st.session_state.radius_display:.1f}?")
+    if 'num_tubes_output_str' in st.session_state:
+        sugerencias.insert(0, f"¿Qué significa: {st.session_state.num_tubes_output_str}?")
+
+    st.caption("Sugerencias rápidas:")
+    cols_sug = st.columns(len(sugerencias))
+    for idx, sug in enumerate(sugerencias):
+        if cols_sug[idx].button(sug, key=f"sug_{idx}", use_container_width=True):
+            st.session_state.chat_input = sug
+            st.rerun()
+
+    # Entrada de usuario
+    chat_input = st.text_input("Escribe tu pregunta o instrucción:", value=st.session_state.get('chat_input', ''), key="chat_input_box")
+    enviar = st.button("Enviar", key="enviar_chat_btn", use_container_width=True)
+
+    # Procesar mensaje
+    if enviar and chat_input.strip():
+        # Construir contexto para IA con TODOS los datos de entrada actuales y resultados
+        contexto = []
+        contexto.append(f"Unidad seleccionada: {st.session_state.get('selected_unit_name', 'N/A')}")
+        contexto.append(f"Cuerda (c): {st.session_state.get('chord_input_float', 'N/A')}")
+        contexto.append(f"Sagitta (s): {st.session_state.get('sagitta_input_float', 'N/A')}")
+        contexto.append(f"Longitud de tubo (L_tubo): {st.session_state.get('tube_length_input_float', 'N/A')}")
+        contexto.append(f"Cantidad de arcos: {st.session_state.get('cantidad_arcos_widget', 'N/A')}")
+        if 'radius_display' in st.session_state:
+            contexto.append(f"Radio calculado: {st.session_state.radius_display}")
+        if 'arc_length_display_one_arc' in st.session_state:
+            contexto.append(f"Longitud de arco (1 arco): {st.session_state.arc_length_display_one_arc}")
+        if 'num_tubes_output_str' in st.session_state:
+            contexto.append(f"Resultado de ajuste de tubos: {st.session_state.num_tubes_output_str}")
+        # Incluir historial si se desea contexto
+        historial = "\n".join([f"Usuario: {h['user']}\nAsistente: {h['ai']}" for h in st.session_state.chat_history])
+        prompt = (
+            f"Historial previo:\n{historial}\n" if historial else ""
+        ) + (
+            "\n".join(contexto) + "\n" if contexto else ""
+        ) + f"\nPregunta o instrucción del usuario: {chat_input}\n"
+
+        # Llamar a Gemini Flash 2
+        ai_response = call_gemini_api(prompt, app_config['gemini_api_key'])
+        if ai_response["success"]:
+            respuesta = ai_response["response"]
+            # Detectar si el usuario quiere cambiar algún valor
+            # (Ejemplo simple: "cambiar cuerda a 50")
+            import re
+            cambios = []
+            for campo, key, tipo in [
+                ("cuerda", "chord_input_float", float),
+                ("sagitta", "sagitta_input_float", float),
+                ("longitud de tubo", "tube_length_input_float", float),
+                ("cantidad de arcos", "cantidad_arcos_widget", int)
+            ]:
+                patron = rf"cambiar {campo} a ([0-9]+(\.[0-9]+)?)"
+                m = re.search(patron, chat_input, re.IGNORECASE)
+                if m:
+                    nuevo_valor = tipo(m.group(1))
+                    st.session_state[key] = nuevo_valor
+                    cambios.append(f"{campo} cambiado a {nuevo_valor}")
+            st.session_state.chat_history.append({"user": chat_input, "ai": respuesta})
+            st.markdown(f"<div style='background:#23272f;color:#f5f5fa;padding:0.5em 1em;border-radius:8px;margin-bottom:0.5em;'><b>Asistente:</b> {respuesta}</div>", unsafe_allow_html=True)
+            if cambios:
+                st.success("; ".join(cambios))
+        else:
+            st.session_state.chat_history.append({"user": chat_input, "ai": f"❌ {ai_response['error']}"})
+            st.session_state.chat_input = chat_input
+        st.rerun()
+
+    # Mostrar historial de chat
+    for h in st.session_state.chat_history[-8:]:
+        st.markdown(f"<div style='background:#23272f;color:#f5f5fa;padding:0.5em 1em;border-radius:8px;margin-bottom:0.5em;'><b>Usuario:</b> {h['user']}<br><b>Asistente:</b> {h['ai']}</div>", unsafe_allow_html=True)
 
     st.subheader("📋 Ejemplos")
     examples_float_data = [{"name": "Arco Estándar", "chord": 100.0, "sagitta": 10.0, "tube_length": 50.0},{"name": "Puente Pequeño", "chord": 50.0, "sagitta": 5.0},{"name": "Lente Óptica", "chord": 10.0, "sagitta": 0.5, "tube_length": 8.0},{"name": "Curva Suave", "chord": 1000.0, "sagitta": 25.0, "tube_length": 200.0}]

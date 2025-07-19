@@ -249,7 +249,11 @@ def main():
     
     # Botón para resetear valores por defecto
     if st.button("🔄 Resetear valores por defecto", help="Reinicia todos los campos a sus valores por defecto"):
-        # Limpiar todos los valores problemáticos
+        # Limpiar COMPLETAMENTE el estado de sesión para evitar ciclos
+        for key in list(st.session_state.keys()):
+            if key.endswith('_input') or key in ['perfil_tub_input', 'tam_regla_input', 'anc_regla_input', 'despedico_input']:
+                del st.session_state[key]
+        # Forzar valores correctos
         st.session_state.perfil_tub_input = 0.048  # 4.8 cm en metros
         st.session_state.tam_regla_input = 2.16    # 216 cm en metros  
         st.session_state.anc_regla_input = 0.03781 # 3.781 cm en metros

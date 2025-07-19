@@ -208,14 +208,14 @@ def main():
             st.session_state.tube_length_input_float = float(600.0 * float(UNITS_TO_METERS["Centímetros (cm)"]) / float(current_unit_factor))
 
     # --- Entradas adicionales ---
-    # Forzar reinicialización con valores correctos
-    if 'perfil_tub_input' not in st.session_state or st.session_state.perfil_tub_input > 1.0:
+    # Inicialización robusta con valores por defecto correctos
+    if 'perfil_tub_input' not in st.session_state:
         # Inicializar en metros (unidad base) - 4.8 cm = 0.048 m
         st.session_state.perfil_tub_input = 0.048
-    if 'tam_regla_input' not in st.session_state or st.session_state.tam_regla_input > 10.0:
+    if 'tam_regla_input' not in st.session_state:
         # Inicializar en metros (unidad base) - 216 cm = 2.16 m
         st.session_state.tam_regla_input = 2.16
-    if 'anc_regla_input' not in st.session_state or st.session_state.anc_regla_input > 1.0:
+    if 'anc_regla_input' not in st.session_state:
         # Inicializar en metros (unidad base) - 3.781 cm = 0.03781 m
         st.session_state.anc_regla_input = 0.03781
     if 'num_arcos_input' not in st.session_state:
@@ -297,9 +297,17 @@ def main():
     st.subheader("Entradas adicionales (opcional)")
     # Perfil de tubo (decimal, ej: 4.8 cm)
     perfil_tub_val = st.session_state.perfil_tub_input / float(factor_to_base_unit)
+    # Ajustar el valor si está fuera del rango permitido
+    if perfil_tub_val > 10000.0:
+        perfil_tub_val = 10000.0
+        st.session_state.perfil_tub_input = perfil_tub_val * float(factor_to_base_unit)
+    elif perfil_tub_val < 0.0:
+        perfil_tub_val = 0.0
+        st.session_state.perfil_tub_input = perfil_tub_val * float(factor_to_base_unit)
+    
     perfil_tub_val = st.number_input(
         f"Perfil Tubo (perfil tub.) en {selected_unit_name_for_display}",
-        min_value=0.0, max_value=100.0, value=perfil_tub_val, step=unit_step, format=num_input_fmt_str,
+        min_value=0.0, max_value=10000.0, value=perfil_tub_val, step=unit_step, format=num_input_fmt_str,
         key="perfil_tub_input_widget",
         help=f"Perfil del tubo en {selected_unit_name_for_display}")
     st.session_state.perfil_tub_input = perfil_tub_val * float(factor_to_base_unit)

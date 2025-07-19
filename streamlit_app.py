@@ -208,13 +208,14 @@ def main():
             st.session_state.tube_length_input_float = float(600.0 * float(UNITS_TO_METERS["Centímetros (cm)"]) / float(current_unit_factor))
 
     # --- Entradas adicionales ---
-    if 'perfil_tub_input' not in st.session_state:
+    # Forzar reinicialización con valores correctos
+    if 'perfil_tub_input' not in st.session_state or st.session_state.perfil_tub_input > 1.0:
         # Inicializar en metros (unidad base) - 4.8 cm = 0.048 m
         st.session_state.perfil_tub_input = 0.048
-    if 'tam_regla_input' not in st.session_state:
+    if 'tam_regla_input' not in st.session_state or st.session_state.tam_regla_input > 10.0:
         # Inicializar en metros (unidad base) - 216 cm = 2.16 m
         st.session_state.tam_regla_input = 2.16
-    if 'anc_regla_input' not in st.session_state:
+    if 'anc_regla_input' not in st.session_state or st.session_state.anc_regla_input > 1.0:
         # Inicializar en metros (unidad base) - 3.781 cm = 0.03781 m
         st.session_state.anc_regla_input = 0.03781
     if 'num_arcos_input' not in st.session_state:
@@ -245,6 +246,15 @@ def main():
     factor_to_base_unit = UNITS_TO_METERS[selected_unit_name_for_display]
 
     st.info(f"Precisión interna: {app_config['precision']} dígitos. Entradas/Resultados en {selected_unit_name_for_display}. Resultados mostrados con {display_prec_cfg} decimal.")
+    
+    # Botón para resetear valores por defecto
+    if st.button("🔄 Resetear valores por defecto", help="Reinicia todos los campos a sus valores por defecto"):
+        # Limpiar todos los valores problemáticos
+        st.session_state.perfil_tub_input = 0.048  # 4.8 cm en metros
+        st.session_state.tam_regla_input = 2.16    # 216 cm en metros  
+        st.session_state.anc_regla_input = 0.03781 # 3.781 cm en metros
+        st.session_state.despedico_input = 0.4     # 40 cm en metros
+        st.rerun()
 
     with st.sidebar:
         st.header("⚙️ Información de la App"); st.write(f"✅ mpmath: {'Disponible' if MPMATH_AVAILABLE else 'No disponible'}"); st.write(f"✅ Plotly: {'Disponible' if PLOTLY_AVAILABLE else 'No disponible'}")
